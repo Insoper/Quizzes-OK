@@ -154,7 +154,7 @@
   </div>
 
   <script>
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbw4PiKVtRCB7VBQ6SYvLv1XYlaOMWE5uDGaX_vNnUrDFmuiebhcFP3_btRBzQRO02X00w/exec";
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbxJf2xfGp0pC7vQE4e5jG3VSX_wI2sw0jtuBNdgsqkpztr6D_9NYmICq9a1C6h5XMne9w/exec";
     const PROGRESS_URL = GAS_URL + "?tipe=jawaban";
     const validUser = "Insoper_UT";
     const validPass = "dediKASI";
@@ -213,29 +213,41 @@
       });
     }
 
-    function tampilkanKategori() {
-      const kategori = document.getElementById("kategoriSelect").value;
-      const durasi = parseInt(document.getElementById("durasiSelect").value);
-      const kelas = document.getElementById("kodeKelas").value.trim();
-      if (!kategori || !/^\d{3}$/.test(kelas)) {
-        alert("Pilih kategori & kode kelas (3 digit angka).");
-        return;
-      }
-      const key = "soal_aktif_list_" + kelas;
-      let list = JSON.parse(localStorage.getItem(key)) || [];
-      if (list.some(s => s.kategori === kategori)) {
-        alert(`Soal kategori "${kategori}" sudah aktif untuk kelas ${kelas}.`);
-        return;
-      }
-      const now = new Date();
-      const akhir = new Date(now.getTime() + durasi * 60 * 60 * 1000);
-      const soalKategori = semuaSoal.filter(s => s.Kategori === kategori);
-      const soalBaru = { kategori, soal: soalKategori, waktuMulai: now.toISOString(), waktuAkhir: akhir.toISOString(), durasiJam: durasi };
-      list.push(soalBaru);
-      localStorage.setItem(key, JSON.stringify(list));
-      document.getElementById("status").innerText = `✅ Soal kategori "${kategori}" ditampilkan untuk kelas ${kelas}.`;
-      tampilkanPreview(kategori, now, akhir, kelas);
-    }
+    async function tampilkanKategori() {
+  const kategori = document.getElementById("kategoriSelect").value;
+  const durasi = parseInt(document.getElementById("durasiSelect").value);
+  const kelas = document.getElementById("kodeKelas").value.trim();
+
+  if (!kategori || !/^\d{3}$/.test(kelas)) {
+    alert("Pilih kategori & kode kelas (3 digit angka).");
+    return;
+  }
+
+  const now = new Date();
+  const akhir = new Date(now.getTime() + durasi * 60 * 60 * 1000);
+  const soalKategori = semuaSoal.filter(s => s.Kategori === kategori);
+
+  const data = {
+    KodeKelas: kelas,
+    Kategori: kategori,
+    Soal: soalKategori,
+    WaktuMulai: now.toISOString(),
+    WaktuAkhir: akhir.toISOString()
+  };
+
+  try {
+    await fetch(GAS_URL + "?tipe=soalaktif", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data)
+    });
+
+    document.getElementById("status").innerText = `✅ Soal kategori "${kategori}" ditampilkan untuk kelas ${kelas}.`;
+    tampilkanPreview(kategori, now, akhir, kelas);
+  } catch (err) {
+    alert("❌ Gagal mengirim soal aktif: " + err);
+  }
+}
 
     function tampilkanPreview(kategori, mulai, akhir, kelas) {
       const preview = document.getElementById("preview");
