@@ -207,44 +207,45 @@
     }
 
     async function tampilkanKategori() {
-    const kategori = document.getElementById("kategoriSelect").value;
-    const durasi = parseInt(document.getElementById("durasiSelect").value);
-    const kelas = document.getElementById("kodeKelas").value.trim();
+  const kategori = document.getElementById("kategoriSelect").value;
+  const durasi = parseInt(document.getElementById("durasiSelect").value);
+  const kelas = document.getElementById("kodeKelas").value.trim();
 
-    if (!kategori || !/^\d{3}$/.test(kelas)) {
-      alert("Pilih kategori & kode kelas (3 digit angka).");
-      return;
-    }
+  if (!kategori || !/^\d{3}$/.test(kelas)) {
+    alert("Pilih kategori & kode kelas (3 digit angka).");
+    return;
+  }
 
-    const now = new Date();
-    const akhir = new Date(now.getTime() + durasi * 60 * 60 * 1000);
-    const soalKategori = semuaSoal.filter(s => s.Kategori === kategori);
+  const now = new Date();
+  const akhir = new Date(now.getTime() + durasi * 60 * 60 * 1000);
+  const soalKategori = semuaSoal.filter(s => s.Kategori === kategori);
 
-    const data = {
-      tipe: "soalaktif", // ✅ kunci utama
-      KodeKelas: kelas,
-      Kategori: kategori,
-      Soal: soalKategori,
-      WaktuMulai: now.toISOString(),
-      WaktuAkhir: akhir.toISOString()
-    };
+  const data = {
+    tipe: "soalaktif",
+    KodeKelas: kelas,
+    Kategori: kategori,
+    Soal: soalKategori,
+    WaktuMulai: now.toISOString(),
+    WaktuAkhir: akhir.toISOString()
+  };
 
-    try {
-  await fetch(GAS_URL, {
-    method: "POST",
-    mode: "no-cors", // ✅ supaya fetch tidak error CORS
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data)
-  });
+  try {
+    await fetch(GAS_URL, {
+      method: "POST",
+      mode: "no-cors", // supaya tidak error CORS
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data)
+    });
 
-  // Karena mode: no-cors, kita anggap berhasil
-  document.getElementById("status").innerText =
-    `✅ Soal kategori "${kategori}" ditampilkan untuk kelas ${kelas}.`;
-  tampilkanPreview(kategori, now, akhir, kelas);
+    document.getElementById("status").innerText =
+      `✅ Soal kategori "${kategori}" ditampilkan untuk kelas ${kelas}.`;
+    tampilkanPreview(kategori, now, akhir, kelas);
 
-} catch (err) {
-  alert("❌ Gagal mengirim soal aktif: " + err);
-}
+  } catch (err) {
+    alert("❌ Gagal mengirim soal aktif: " + err);
+  }
+} // ← INI HARUS ADA!
+
 
 
 
