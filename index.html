@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Instruktur - Kuis Interaktif</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f4f8fc;
+      margin: 0;
+      padding: 20px;
+    }
+    .container {
+      max-width: 720px;
+      margin: 0 auto;
+      background-color: white;
+      padding: 24px;
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    h2 {
+      text-align: center;
+      color: #007bff;
+    }
+    select, button, input {
+      padding: 12px;
+      font-size: 16px;
+      width: 100%;
+      margin-top: 10px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+    button.primary { background-color: #28a745; color: white; border: none; }
+    button.primary:hover { background-color: #218838; }
+    button.danger { background-color: #dc3545; color: white; border: none; margin-top: 10px; }
+    button.danger:hover { background-color: #c82333; }
+    button.info { background-color: #007bff; color: white; border: none; margin-top: 10px; }
+    button.info:hover { background-color: #0069d9; }
+    .status { margin-top: 15px; font-weight: bold; color: #333; text-align: center; }
+    .login-box { max-width: 400px; margin: 80px auto; background-color: white; padding: 24px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    .soal-preview { margin-top: 20px; }
+    .judul-kategori { font-weight: bold; color: #007bff; margin-bottom: 4px; }
+    .waktu-info { font-size: 14px; color: #555; margin: 4px 0 8px; }
+    .hidden { display: none; }
+    #progressModal {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.5);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+    }
+    #progressModalContent {
+      background: white;
+      padding: 20px;
+      width: 90%;
+      max-width: 700px;
+      border-radius: 10px;
+      max-height: 85vh;
+      overflow-y: auto;
+    }
+    #filterBar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: center;
+    }
+    th { background-color: #f0f0f0; }
+  </style>
+
+  <!-- Tambahan untuk PWA -->
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#007bff" />
+  <link rel="icon" href="icon-192.png" />
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').then(reg => {
+          console.log('Service Worker registered', reg);
+        }).catch(err => {
+          console.error('Service Worker registration failed:', err);
+        });
+      });
+    }
+  </script>
+
+</head>
+
+<body>
+  <!-- Login -->
+  <div id="loginForm" class="login-box">
+    <h2>Login Instruktur</h2>
+    <input type="text" id="username" placeholder="Username" />
+    <input type="password" id="password" placeholder="Password" />
+    <button onclick="login()">Masuk</button>
+    <p id="loginError" style="color:red;"></p>
+  </div>
+
+  <!-- Main App -->
+  <div id="mainContent" class="container hidden">
+    <h2>📋 Panel Instruktur</h2>
+
+    <label for="kategoriSelect">Pilih Kategori Soal:</label>
+    <select id="kategoriSelect">
+      <option value="">-- Pilih Kategori --</option>
+    </select>
+
+    <label for="durasiSelect">Pilih Durasi Soal:</label>
+    <select id="durasiSelect">
+      <option value="1">1 Jam</option>
+      <option value="2">2 Jam</option>
+      <option value="3">3 Jam</option>
+      <option value="24">24 Jam</option>
+    </select>
+
+    <input type="text" id="kodeKelas" placeholder="Kode Kelas (misal: 001)" maxlength="3" />
+
+    <button class="primary" onclick="tampilkanKategori()">Tampilkan ke siswa</button>
+    <button class="info" onclick="tampilkanProgress()">Lihat Progress</button>
+
+    <div id="status" class="status"></div>
+    <div id="preview" class="soal-preview"></div>
+  </div>
+
+  <!-- Modal Progress -->
+  <div id="progressModal">
+    <div id="progressModalContent">
+      <h3>📊 Progress dan Hasil Akhir</h3>
+      <div id="filterBar">
+        <select id="filterKategori">
+          <option value="">📘 Semua Kategori</option>
+        </select>
+        <select id="filterKelas">
+          <option value="">🏷 Semua Kelas</option>
+        </select>
+        <button onclick="filterProgress()">🔍 Filter</button>
+      </div>
+      <div id="progressContent">Memuat data...</div>
+      <button class="danger" onclick="tutupProgress()">Tutup</button>
+    </div>
+  </div>
+
+  <script>
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbw4PiKVtRCB7VBQ6SYvLv1XYlaOMWE5uDGaX_vNnUrDFmuiebhcFP3_btRBzQRO02X00w/exec";
+    const PROGRESS_URL = GAS_URL + "?tipe=jawaban";
+    const validUser = "Insoper_UT";
+    const validPass = "dediKASI";
+    let semuaSoal = [];
+    let semuaDataProgress = [];
+
+    window.onload = function () {
+      const saved = JSON.parse(localStorage.getItem("loginData"));
+      if (saved && (Date.now() - saved.waktuLogin < 12 * 60 * 60 * 1000)) {
+        document.getElementById("username").value = saved.user;
+        document.getElementById("password").value = saved.pass;
+        login(true);
+      }
+    };
+
+    function login(auto = false) {
+      const user = document.getElementById("username").value;
+      const pass = document.getElementById("password").value;
+      if (user === validUser && pass === validPass) {
+        localStorage.setItem("loginData", JSON.stringify({ user, pass, waktuLogin: Date.now() }));
+        document.getElementById("loginForm").classList.add("hidden");
+        document.getElementById("mainContent").classList.remove("hidden");
+        fetchSoal();
+      } else if (!auto) {
+        document.getElementById("loginError").innerText = "Username atau password salah.";
+      }
+    }
+
+    async function fetchSoal() {
+      try {
+        const res = await fetch(GAS_URL);
+        const data = await res.json();
+        semuaSoal = data;
+        isiDropdownKategori(data);
+        Object.keys(localStorage).forEach(key => {
+          if (key.startsWith("soal_aktif_list_")) {
+            const list = JSON.parse(localStorage.getItem(key)) || [];
+            const kelas = key.replace("soal_aktif_list_", "");
+            list.forEach(item => tampilkanPreview(item.kategori, item.waktuMulai, item.waktuAkhir, kelas));
+          }
+        });
+      } catch (err) {
+        alert("❌ Gagal mengambil soal: " + err);
+      }
+    }
+
+    function isiDropdownKategori(data) {
+      const kategoriSet = new Set();
+      data.forEach(row => { if (row.Kategori) kategoriSet.add(row.Kategori); });
+      const dropdown = document.getElementById("kategoriSelect");
+      kategoriSet.forEach(kat => {
+        const opt = document.createElement("option");
+        opt.value = kat;
+        opt.textContent = kat;
+        dropdown.appendChild(opt);
+      });
+    }
+
+    function tampilkanKategori() {
+      const kategori = document.getElementById("kategoriSelect").value;
+      const durasi = parseInt(document.getElementById("durasiSelect").value);
+      const kelas = document.getElementById("kodeKelas").value.trim();
+      if (!kategori || !/^\d{3}$/.test(kelas)) {
+        alert("Pilih kategori & kode kelas (3 digit angka).");
+        return;
+      }
+      const key = "soal_aktif_list_" + kelas;
+      let list = JSON.parse(localStorage.getItem(key)) || [];
+      if (list.some(s => s.kategori === kategori)) {
+        alert(`Soal kategori "${kategori}" sudah aktif untuk kelas ${kelas}.`);
+        return;
+      }
+      const now = new Date();
+      const akhir = new Date(now.getTime() + durasi * 60 * 60 * 1000);
+      const soalKategori = semuaSoal.filter(s => s.Kategori === kategori);
+      const soalBaru = { kategori, soal: soalKategori, waktuMulai: now.toISOString(), waktuAkhir: akhir.toISOString(), durasiJam: durasi };
+      list.push(soalBaru);
+      localStorage.setItem(key, JSON.stringify(list));
+      document.getElementById("status").innerText = `✅ Soal kategori "${kategori}" ditampilkan untuk kelas ${kelas}.`;
+      tampilkanPreview(kategori, now, akhir, kelas);
+    }
+
+    function tampilkanPreview(kategori, mulai, akhir, kelas) {
+      const preview = document.getElementById("preview");
+      const waktuMulai = new Date(mulai).toLocaleString();
+      const waktuAkhir = new Date(akhir).toLocaleString();
+      const id = `kategori-${kelas}-${kategori.replace(/\s+/g, '')}`;
+      let html = `<div class="soal-kategori" id="${id}">`;
+      html += `<div class="judul-kategori">📘 <b>Kategori:</b> ${kategori} | <b>Kelas:</b> ${kelas}</div>`;
+      html += `<div class="waktu-info">🕒 Mulai: ${waktuMulai} | Selesai: ${waktuAkhir}</div>`;
+      html += `<button class="danger" onclick="hapusKategoriSoal('${kategori}', '${kelas}')">Tutup Soal Ini</button>`;
+      html += "</div><hr>";
+      preview.innerHTML += html;
+    }
+
+    function hapusKategoriSoal(kategori, kelas) {
+      const key = "soal_aktif_list_" + kelas;
+      let list = JSON.parse(localStorage.getItem(key)) || [];
+      list = list.filter(s => s.kategori !== kategori);
+      localStorage.setItem(key, JSON.stringify(list));
+      const id = `kategori-${kelas}-${kategori.replace(/\s+/g, '')}`;
+      const el = document.getElementById(id);
+      if (el) el.remove();
+      document.getElementById("status").innerText = `❌ Soal kategori "${kategori}" untuk kelas ${kelas} ditutup.`;
+    }
+
+    function tampilkanProgress() {
+      document.getElementById("progressModal").style.display = "flex";
+      document.getElementById("progressContent").innerHTML = "Memuat data...";
+      fetch(PROGRESS_URL)
+        .then(res => res.json())
+        .then(data => {
+          semuaDataProgress = data;
+          isiFilterProgress(data);
+          renderProgressTable(data);
+        });
+    }
+
+// ... (HTML dan bagian lainnya tetap)
+
+    let kategoriToKelasMap = {};
+    let kelasToKategoriMap = {};
+
+    function isiFilterProgress(data) {
+      const kategoriSet = new Set();
+      const kelasSet = new Set();
+      kategoriToKelasMap = {};
+      kelasToKategoriMap = {};
+
+      data.forEach(row => {
+        const kategori = row.Kategori;
+        const kelas = String(row.Kelas).padStart(3, '0');
+
+        if (kategori) kategoriSet.add(kategori);
+        if (kelas) kelasSet.add(kelas);
+
+        if (kategori && kelas) {
+          if (!kategoriToKelasMap[kategori]) kategoriToKelasMap[kategori] = new Set();
+          kategoriToKelasMap[kategori].add(kelas);
+
+          if (!kelasToKategoriMap[kelas]) kelasToKategoriMap[kelas] = new Set();
+          kelasToKategoriMap[kelas].add(kategori);
+        }
+      });
+
+      const katEl = document.getElementById("filterKategori");
+      katEl.innerHTML = '<option value="">📘 Semua Kategori</option>';
+      Array.from(kategoriSet).sort().forEach(k => katEl.innerHTML += `<option value="${k}">${k}</option>`);
+
+      const kelasEl = document.getElementById("filterKelas");
+      kelasEl.innerHTML = '<option value="">🏷 Semua Kelas</option>';
+      Array.from(kelasSet).sort().forEach(k => kelasEl.innerHTML += `<option value="${k}">${k}</option>`);
+
+      katEl.onchange = updateKelasDropdown;
+      kelasEl.onchange = updateKategoriDropdown;
+    }
+
+    function updateKelasDropdown() {
+      const kat = document.getElementById("filterKategori").value;
+      const kelasEl = document.getElementById("filterKelas");
+      kelasEl.innerHTML = '<option value="">🏷 Semua Kelas</option>';
+
+      let kelasList = [];
+      if (kat && kategoriToKelasMap[kat]) {
+        kelasList = Array.from(kategoriToKelasMap[kat]);
+      } else {
+        Object.values(kategoriToKelasMap).forEach(set => set.forEach(k => kelasList.push(k)));
+      }
+      [...new Set(kelasList)].sort().forEach(k => {
+        kelasEl.innerHTML += `<option value="${k}">${k}</option>`;
+      });
+    }
+
+    function updateKategoriDropdown() {
+      const kelas = document.getElementById("filterKelas").value;
+      const katEl = document.getElementById("filterKategori");
+      katEl.innerHTML = '<option value="">📘 Semua Kategori</option>';
+
+      let kategoriList = [];
+      if (kelas && kelasToKategoriMap[kelas]) {
+        kategoriList = Array.from(kelasToKategoriMap[kelas]);
+      } else {
+        Object.values(kelasToKategoriMap).forEach(set => set.forEach(k => kategoriList.push(k)));
+      }
+      [...new Set(kategoriList)].sort().forEach(k => {
+        katEl.innerHTML += `<option value="${k}">${k}</option>`;
+      });
+    }
+
+    function filterProgress() {
+      const kat = document.getElementById("filterKategori").value;
+      const kls = document.getElementById("filterKelas").value;
+      const hasil = semuaDataProgress.filter(row => {
+        const kelasStr = String(row.Kelas).padStart(3, '0');
+        return (kat === "" || row.Kategori === kat) && (kls === "" || kelasStr === kls);
+      });
+      renderProgressTable(hasil);
+    }
+
+// ... (lanjutan tetap)
+
+    function renderProgressTable(data) {
+      const content = document.getElementById("progressContent");
+      if (!data || data.length === 0) {
+        content.innerHTML = "<p>Tidak ada data peserta.</p>";
+        return;
+      }
+      let html = `<table><thead><tr><th>Timestamp</th><th>Nama</th><th>Kelas</th><th>Kategori</th><th>Jawaban</th><th>Skor</th></tr></thead><tbody>`;
+      data.forEach(row => {
+        html += `<tr><td>${row.Timestamp || '-'}</td><td>${row.Nama || '-'}</td><td>${row.Kelas || '-'}</td><td>${row.Kategori || '-'}</td><td>${row.Jawaban || '-'}</td><td>${row.Skor || '-'}</td></tr>`;
+      });
+      html += "</tbody></table>";
+      content.innerHTML = html;
+    }
+
+    function tutupProgress() {
+      document.getElementById("progressModal").style.display = "none";
+    }
+  </script>
+</body>
+</html>
