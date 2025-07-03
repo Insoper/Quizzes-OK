@@ -154,7 +154,7 @@
   </div>
 
   <script>
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbxJf2xfGp0pC7vQE4e5jG3VSX_wI2sw0jtuBNdgsqkpztr6D_9NYmICq9a1C6h5XMne9w/exec";
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbw4PiKVtRCB7VBQ6SYvLv1XYlaOMWE5uDGaX_vNnUrDFmuiebhcFP3_btRBzQRO02X00w/exec";
     const PROGRESS_URL = GAS_URL + "?tipe=jawaban";
     const validUser = "Insoper_UT";
     const validPass = "dediKASI";
@@ -189,9 +189,7 @@
         const data = await res.json();
         semuaSoal = data;
         isiDropdownKategori(data);
-        Object.keys(localStorage).forEach(key => {
-          if (key.startsWith("soal_aktif_list_")) {
-            const list = JSON.parse(localStorage.getItem(key)) || [];
+        if (key.startsWith("soal_aktif_list_")) {
             const kelas = key.replace("soal_aktif_list_", "");
             list.forEach(item => tampilkanPreview(item.kategori, item.waktuMulai, item.waktuAkhir, kelas));
           }
@@ -264,10 +262,8 @@
 
     function hapusKategoriSoal(kategori, kelas) {
       const key = "soal_aktif_list_" + kelas;
-      let list = JSON.parse(localStorage.getItem(key)) || [];
       list = list.filter(s => s.kategori !== kategori);
-      localStorage.setItem(key, JSON.stringify(list));
-      const id = `kategori-${kelas}-${kategori.replace(/\s+/g, '')}`;
+            const id = `kategori-${kelas}-${kategori.replace(/\s+/g, '')}`;
       const el = document.getElementById(id);
       if (el) el.remove();
       document.getElementById("status").innerText = `❌ Soal kategori "${kategori}" untuk kelas ${kelas} ditutup.`;
