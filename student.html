@@ -5,6 +5,9 @@
   <title>Peserta - Kuis Interaktif</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
+    * {
+      box-sizing: border-box;
+    }
     body {
       font-family: Arial, sans-serif;
       max-width: 700px;
@@ -63,20 +66,20 @@
       background-color: #0056b3;
     }
     #loginForm {
-      background: #f9f9f9;
-      border: 1px solid #ddd;
+      background: #ffffff;
+      border: 1px solid #ccc;
       border-radius: 10px;
-      padding: 20px;
-      max-width: 400px;
-      margin: 40px auto;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      padding: 30px 20px;
+      max-width: 500px;
+      margin: 60px auto;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
       text-align: center;
     }
     #loginForm input {
       width: 100%;
-      padding: 10px;
+      padding: 12px;
       font-size: 16px;
-      margin-top: 10px;
+      margin-top: 12px;
       border: 1px solid #ccc;
       border-radius: 6px;
     }
@@ -129,7 +132,6 @@
       });
     }
   </script>
-
 </head>
 
 <body>
@@ -166,7 +168,6 @@
   <script>
     let soalList = [], kategori = "", indexSoal = 0;
     let nama = "", kelas = "";
-    let skorBenar = 0;
     const JAWABAN_TERKUMPUL = [];
 
     function mulaiKuis() {
@@ -213,7 +214,6 @@
         Soal: soal.Pertanyaan,
         Jawaban: jawaban
       };
-      if (jawaban === soal.KunciJawaban?.trim().toUpperCase()) skorBenar++;
       indexSoal++;
       if (indexSoal < soalList.length) {
         tampilkanSoal();
@@ -249,7 +249,13 @@
     }
 
     function selesaiKuis() {
+      let skorBenar = 0;
+      JAWABAN_TERKUMPUL.forEach((j, i) => {
+        const kunci = soalList[i].KunciJawaban?.trim().toUpperCase();
+        if (j.Jawaban === kunci) skorBenar++;
+      });
       const skor = Math.round((skorBenar / soalList.length) * 100);
+
       fetch("https://script.google.com/macros/s/AKfycbw4PiKVtRCB7VBQ6SYvLv1XYlaOMWE5uDGaX_vNnUrDFmuiebhcFP3_btRBzQRO02X00w/exec", {
         method: "POST",
         mode: "no-cors",
@@ -262,6 +268,7 @@
           Skor: skor
         })
       });
+
       alert("Jawaban berhasil disubmit. Terima kasih!");
     }
   </script>
