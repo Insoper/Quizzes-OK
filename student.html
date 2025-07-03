@@ -256,20 +256,20 @@
       });
       const skor = Math.round((skorBenar / soalList.length) * 100);
 
-      fetch("https://script.google.com/macros/s/AKfycbw4PiKVtRCB7VBQ6SYvLv1XYlaOMWE5uDGaX_vNnUrDFmuiebhcFP3_btRBzQRO02X00w/exec", {
-        method: "POST",
-        mode: "no-cors",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          Nama: nama,
-          Kelas: kelas,
-          Kategori: kategori,
-          Jawaban: JAWABAN_TERKUMPUL.map(j => j.Jawaban).join(","),
-          Skor: skor
-        })
-      });
-
-      alert("Jawaban berhasil disubmit. Terima kasih!");
+     fetch("https://script.google.com/macros/s/AKfycbwG9fKOzzfYedzx47Wl_E83bKkS0uqPFa_O36Cj-EbRzLn-3WnxTCbCODGxopAAxarFWA/exec", {
+  method: "POST",
+  mode: "no-cors",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    Nama: nama,
+    Kelas: kelas,
+    Kategori: kategori,
+    Jawaban: JAWABAN_TERKUMPUL.map(j => j.Jawaban).join(","),
+    Skor: skor
+  })
+})
+.then(() => alert("Jawaban berhasil disubmit. Terima kasih!"))
+.catch((err) => alert("❌ Gagal mengirim jawaban: " + err));
     }
   </script>
 </body>
