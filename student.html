@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Quiz Interaktif - Siswa</title>
+  <link rel="manifest" href="manifest-siswa.json">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
     body {
@@ -43,16 +44,6 @@
       color: white;
       border-color: #0d6efd;
     }
-    .option-btn.correct {
-      background-color: #198754;
-      color: white;
-      border-color: #198754;
-    }
-    .option-btn.incorrect {
-      background-color: #dc3545;
-      color: white;
-      border-color: #dc3545;
-    }
     .progress-indicator {
       display: flex;
       gap: 5px;
@@ -91,6 +82,24 @@
       border-radius: 8px;
       background-color: #f8f9fa;
     }
+    .result-item.correct {
+      border-left: 4px solid #198754;
+      background-color: #f1f9f1;
+    }
+    .result-item.incorrect {
+      border-left: 4px solid #dc3545;
+      background-color: #fdf3f3;
+    }
+    .result-status {
+      font-weight: bold;
+      margin-top: 8px;
+    }
+    .result-status.correct {
+      color: #198754;
+    }
+    .result-status.incorrect {
+      color: #dc3545;
+    }
     .screen {
       display: none;
     }
@@ -105,6 +114,16 @@
       font-weight: bold;
       color: #0d6efd;
       margin: 20px 0;
+    }
+    /* PWA specific styles */
+    @media all and (display-mode: standalone) {
+      body {
+        padding-top: 0;
+      }
+      .quiz-container {
+        border-radius: 0;
+        min-height: 100vh;
+      }
     }
   </style>
 </head>
@@ -182,12 +201,17 @@
       <div id="result-screen" class="screen">
         <h1 class="text-center mb-4">Hasil Quiz Anda</h1>
         <div class="card">
-          <div class="card-body">
+          <div class="card-body text-center">
             <div class="final-score" id="final-score">85</div>
             <p class="lead">Benar: <span id="correct-answers">8</span> dari <span id="total-questions">10</span> soal</p>
             
-            <div class="detailed-results mt-5" id="detailed-results">
-              <!-- Detail hasil akan diisi oleh JavaScript -->
+            <div id="score-message" class="alert alert-info mt-3"></div>
+            
+            <div class="mt-4">
+              <h5>Detail Jawaban:</h5>
+              <div class="detailed-results mt-3" id="detailed-results">
+                <!-- Detail akan diisi oleh JavaScript -->
+              </div>
             </div>
             
             <button id="finish-btn" class="btn btn-primary mt-4">Selesai</button>
@@ -211,9 +235,21 @@
     let classInfo = null;
     let studentName = '';
 
+    // Initialize PWA
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+          .then(registration => {
+            console.log('ServiceWorker registered');
+          })
+          .catch(err => {
+            console.log('ServiceWorker registration failed: ', err);
+          });
+      });
+    }
+
     // Fungsi utama saat dokumen siap
     document.addEventListener('DOMContentLoaded', function() {
-      // Setup event listeners
       setupEventListeners();
     });
 
@@ -251,53 +287,53 @@
 
     // Fungsi untuk memulai quiz
     async function startQuiz() {
-  studentName = document.getElementById('student-name').value.trim();
-  const classCode = document.getElementById('class-code').value.trim();
-  
-  if (!studentName || !classCode) {
-    showLoginError('Nama dan kode kelas harus diisi');
-    return;
-  }
-  
-  if (!/^\d{6}$/.test(classCode)) {
-    showLoginError('Kode kelas harus 6 digit angka');
-    return;
-  }
-  
-  try {
-    // Periksa kode kelas
-    const checkResponse = await fetch(`${WEB_APP_URL}?action=checkClassCode&classCode=${classCode}`);
-    const checkData = await checkResponse.json();
-    
-    if (!checkData.valid) {
-      showLoginError('Kode kelas tidak ditemukan atau quiz sudah berakhir');
-      return;
+      studentName = document.getElementById('student-name').value.trim();
+      const classCode = document.getElementById('class-code').value.trim();
+      
+      if (!studentName || !classCode) {
+        showLoginError('Nama dan kode kelas harus diisi');
+        return;
+      }
+      
+      if (!/^\d{6}$/.test(classCode)) {
+        showLoginError('Kode kelas harus 6 digit angka');
+        return;
+      }
+      
+      try {
+        // Periksa kode kelas
+        const checkResponse = await fetch(`${WEB_APP_URL}?action=checkClassCode&classCode=${classCode}`);
+        const checkData = await checkResponse.json();
+        
+        if (!checkData.valid) {
+          showLoginError('Kode kelas tidak ditemukan atau quiz sudah berakhir');
+          return;
+        }
+        
+        // Simpan info kelas
+        classInfo = {
+          KodeKelas: classCode,
+          Kategori: checkData.categories,
+          WaktuBerakhir: checkData.endTime
+        };
+        
+        quizEndTime = new Date(checkData.endTime);
+        
+        // Ambil pertanyaan
+        const questionsResponse = await fetch(`${WEB_APP_URL}?action=getQuestions&categories=${encodeURIComponent(checkData.categories)}`);
+        const questionsData = await questionsResponse.json();
+        
+        if (questionsData.status === 'success') {
+          currentQuestions = questionsData.data;
+          initializeQuiz();
+        } else {
+          throw new Error(questionsData.message || 'Gagal memuat pertanyaan');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        showLoginError('Terjadi kesalahan: ' + error.message);
+      }
     }
-    
-    // Simpan info kelas
-    classInfo = {
-      KodeKelas: classCode,
-      Kategori: checkData.categories,
-      WaktuBerakhir: checkData.endTime
-    };
-    
-    quizEndTime = new Date(checkData.endTime);
-    
-    // Ambil pertanyaan
-    const questionsResponse = await fetch(`${WEB_APP_URL}?action=getQuestions&categories=${encodeURIComponent(checkData.categories)}`);
-    const questionsData = await questionsResponse.json();
-    
-    if (questionsData.status === 'success') {
-      currentQuestions = questionsData.data;
-      initializeQuiz();
-    } else {
-      throw new Error(questionsData.message || 'Gagal memuat pertanyaan');
-    }
-  } catch (error) {
-    console.error('Error:', error);
-    showLoginError('Terjadi kesalahan: ' + error.message);
-  }
-}
 
     // Tampilkan error login
     function showLoginError(message) {
@@ -545,11 +581,18 @@
       }
     }
 
-    // Tampilkan hasil
+    // Tampilkan hasil (tanpa kunci jawaban)
     function showResults(resultData) {
       document.getElementById('final-score').textContent = resultData.score;
       document.getElementById('correct-answers').textContent = resultData.correctAnswers;
       document.getElementById('total-questions').textContent = resultData.totalQuestions;
+      
+      // Tampilkan pesan motivasi
+      const scoreMessage = document.getElementById('score-message');
+      scoreMessage.className = 'alert ' + (resultData.score > 70 ? 'alert-success' : 'alert-warning');
+      scoreMessage.textContent = resultData.score > 70 ? 
+        'Kerja bagus! Anda telah lulus.' : 
+        'Anda belum mencapai passing grade. Silakan coba lagi!';
       
       // Tampilkan detail jawaban
       const detailsContainer = document.getElementById('detailed-results');
@@ -565,7 +608,9 @@
           <h5>Soal ${index + 1}</h5>
           <p><strong>Pertanyaan:</strong> ${question.Pertanyaan}</p>
           <p><strong>Jawaban Anda:</strong> ${studentAnswer} - ${getOptionText(question, studentAnswer)}</p>
-          <p><strong>Jawaban Benar:</strong> ${question.KunciJawaban} - ${getOptionText(question, question.KunciJawaban)}</p>
+          <p class="result-status ${isCorrect ? 'correct' : 'incorrect'}">
+            ${isCorrect ? '✅ Jawaban Anda Benar' : '❌ Jawaban Anda Salah'}
+          </p>
         `;
         
         detailsContainer.appendChild(item);
@@ -578,11 +623,13 @@
 
     // Mendapatkan teks opsi
     function getOptionText(question, optionKey) {
+      if (!question) return 'Tidak ada data soal';
+      
       switch(optionKey) {
-        case 'A': return question.PilihanA;
-        case 'B': return question.PilihanB;
-        case 'C': return question.PilihanC;
-        case 'D': return question.PilihanD;
+        case 'A': return question.PilihanA || 'Tidak ada pilihan';
+        case 'B': return question.PilihanB || 'Tidak ada pilihan';
+        case 'C': return question.PilihanC || 'Tidak ada pilihan';
+        case 'D': return question.PilihanD || 'Tidak ada pilihan';
         default: return 'Tidak menjawab';
       }
     }
@@ -603,21 +650,5 @@
       currentQuestionIndex = 0;
     }
   </script>
-
-<script>
-  // Register Service Worker
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('/sw.js')
-        .then(registration => {
-          console.log('ServiceWorker registration successful');
-        })
-        .catch(err => {
-          console.log('ServiceWorker registration failed: ', err);
-        });
-    });
-  }
-</script>
-
 </body>
 </html>
