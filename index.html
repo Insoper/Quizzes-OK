@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Instruktur - Kuis Interaktif</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     * { box-sizing: border-box; }
     body {
@@ -80,25 +80,7 @@
     }
     th { background-color: #f0f0f0; }
   </style>
-
-  <!-- Tambahan untuk PWA -->
-  <link rel="manifest" href="manifest.json" />
-  <meta name="theme-color" content="#007bff" />
-  <link rel="icon" href="icon-192.png" />
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js').then(reg => {
-          console.log('Service Worker registered', reg);
-        }).catch(err => {
-          console.error('Service Worker registration failed:', err);
-        });
-      });
-    }
-  </script>
-
 </head>
-
 <body>
   <!-- Login -->
   <div id="loginForm" class="login-box">
@@ -140,12 +122,8 @@
     <div id="progressModalContent">
       <h3>📊 Progress dan Hasil Akhir</h3>
       <div id="filterBar">
-        <select id="filterKategori">
-          <option value="">📘 Semua Kategori</option>
-        </select>
-        <select id="filterKelas">
-          <option value="">🏷 Semua Kelas</option>
-        </select>
+        <select id="filterKategori"><option value="">📘 Semua Kategori</option></select>
+        <select id="filterKelas"><option value="">🏷 Semua Kelas</option></select>
         <button onclick="filterProgress()">🔍 Filter</button>
       </div>
       <div id="progressContent">Memuat data...</div>
@@ -178,6 +156,7 @@
         document.getElementById("loginForm").classList.add("hidden");
         document.getElementById("mainContent").classList.remove("hidden");
         fetchSoal();
+        loadSoalAktif();
       } else if (!auto) {
         document.getElementById("loginError").innerText = "Username atau password salah.";
       }
@@ -189,14 +168,14 @@
         const data = await res.json();
         semuaSoal = data;
         isiDropdownKategori(data);
-        } catch (err) {
+      } catch (err) {
         alert("❌ Gagal mengambil soal: " + err);
       }
     }
 
     function isiDropdownKategori(data) {
       const kategoriSet = new Set();
-      data.forEach(row => { if (row.Kategori) kategoriSet.add(row.Kategori); });
+      data.forEach(row => row.Kategori && kategoriSet.add(row.Kategori));
       const dropdown = document.getElementById("kategoriSelect");
       kategoriSet.forEach(kat => {
         const opt = document.createElement("option");
@@ -207,47 +186,42 @@
     }
 
     async function tampilkanKategori() {
-  const kategori = document.getElementById("kategoriSelect").value;
-  const durasi = parseInt(document.getElementById("durasiSelect").value);
-  const kelas = document.getElementById("kodeKelas").value.trim();
+      const kategori = document.getElementById("kategoriSelect").value;
+      const durasi = parseInt(document.getElementById("durasiSelect").value);
+      const kelas = document.getElementById("kodeKelas").value.trim();
 
-  if (!kategori || !/^\d{3}$/.test(kelas)) {
-    alert("Pilih kategori & kode kelas (3 digit angka).");
-    return;
-  }
+      if (!kategori || !/^\d{3}$/.test(kelas)) {
+        alert("Pilih kategori & kode kelas (3 digit angka).");
+        return;
+      }
 
-  const now = new Date();
-  const akhir = new Date(now.getTime() + durasi * 60 * 60 * 1000);
-  const soalKategori = semuaSoal.filter(s => s.Kategori === kategori);
+      const now = new Date();
+      const akhir = new Date(now.getTime() + durasi * 60 * 60 * 1000);
+      const soalKategori = semuaSoal.filter(s => s.Kategori === kategori);
 
-  const data = {
-    tipe: "soalaktif",
-    KodeKelas: kelas,
-    Kategori: kategori,
-    Soal: soalKategori,
-    WaktuMulai: now.toISOString(),
-    WaktuAkhir: akhir.toISOString()
-  };
+      const data = {
+        tipe: "soalaktif",
+        KodeKelas: kelas,
+        Kategori: kategori,
+        Soal: soalKategori,
+        WaktuMulai: now.toISOString(),
+        WaktuAkhir: akhir.toISOString()
+      };
 
-  try {
-    await fetch(GAS_URL, {
-      method: "POST",
-      mode: "no-cors", // supaya tidak error CORS
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data)
-    });
-
-    document.getElementById("status").innerText =
-      `✅ Soal kategori "${kategori}" ditampilkan untuk kelas ${kelas}.`;
-    tampilkanPreview(kategori, now, akhir, kelas);
-
-  } catch (err) {
-    alert("❌ Gagal mengirim soal aktif: " + err);
-  }
-} // ← INI HARUS ADA!
-
-
-
+      try {
+        await fetch(GAS_URL, {
+          method: "POST",
+          mode: "no-cors",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data)
+        });
+        tampilkanPreview(kategori, now, akhir, kelas);
+        document.getElementById("status").innerText =
+          `✅ Soal kategori "${kategori}" ditampilkan untuk kelas ${kelas}.`;
+      } catch (err) {
+        alert("❌ Gagal mengirim soal aktif: " + err);
+      }
+    }
 
     function tampilkanPreview(kategori, mulai, akhir, kelas) {
       const preview = document.getElementById("preview");
@@ -263,12 +237,25 @@
     }
 
     function hapusKategoriSoal(kategori, kelas) {
-  const id = `kategori-${kelas}-${kategori.replace(/\s+/g, '')}`;
-  const el = document.getElementById(id);
-  if (el) el.remove();
-  document.getElementById("status").innerText = `❌ Soal kategori "${kategori}" untuk kelas ${kelas} ditutup.`;
-}
+      const id = `kategori-${kelas}-${kategori.replace(/\s+/g, '')}`;
+      const el = document.getElementById(id);
+      if (el) el.remove();
+      document.getElementById("status").innerText =
+        `❌ Soal kategori "${kategori}" untuk kelas ${kelas} ditutup.`;
+    }
 
+    async function loadSoalAktif() {
+      try {
+        const res = await fetch(GAS_URL + "?tipe=soalaktif");
+        const data = await res.json();
+        const now = new Date();
+        data.filter(row => new Date(row.WaktuAkhir) >= now).forEach(row => {
+          tampilkanPreview(row.Kategori, row.WaktuMulai, row.WaktuAkhir, row.KodeKelas);
+        });
+      } catch (err) {
+        console.error("Gagal mengambil soal aktif:", err);
+      }
+    }
 
     function tampilkanProgress() {
       document.getElementById("progressModal").style.display = "flex";
@@ -282,7 +269,9 @@
         });
     }
 
-// ... (HTML dan bagian lainnya tetap)
+    function tutupProgress() {
+      document.getElementById("progressModal").style.display = "none";
+    }
 
     let kategoriToKelasMap = {};
     let kelasToKategoriMap = {};
@@ -296,17 +285,12 @@
       data.forEach(row => {
         const kategori = row.Kategori;
         const kelas = String(row.Kelas).padStart(3, '0');
-
         if (kategori) kategoriSet.add(kategori);
         if (kelas) kelasSet.add(kelas);
-
-        if (kategori && kelas) {
-          if (!kategoriToKelasMap[kategori]) kategoriToKelasMap[kategori] = new Set();
-          kategoriToKelasMap[kategori].add(kelas);
-
-          if (!kelasToKategoriMap[kelas]) kelasToKategoriMap[kelas] = new Set();
-          kelasToKategoriMap[kelas].add(kategori);
-        }
+        if (!kategoriToKelasMap[kategori]) kategoriToKelasMap[kategori] = new Set();
+        if (!kelasToKategoriMap[kelas]) kelasToKategoriMap[kelas] = new Set();
+        kategoriToKelasMap[kategori].add(kelas);
+        kelasToKategoriMap[kelas].add(kategori);
       });
 
       const katEl = document.getElementById("filterKategori");
@@ -325,32 +309,16 @@
       const kat = document.getElementById("filterKategori").value;
       const kelasEl = document.getElementById("filterKelas");
       kelasEl.innerHTML = '<option value="">🏷 Semua Kelas</option>';
-
-      let kelasList = [];
-      if (kat && kategoriToKelasMap[kat]) {
-        kelasList = Array.from(kategoriToKelasMap[kat]);
-      } else {
-        Object.values(kategoriToKelasMap).forEach(set => set.forEach(k => kelasList.push(k)));
-      }
-      [...new Set(kelasList)].sort().forEach(k => {
-        kelasEl.innerHTML += `<option value="${k}">${k}</option>`;
-      });
+      let kelasList = kat && kategoriToKelasMap[kat] ? Array.from(kategoriToKelasMap[kat]) : Object.values(kategoriToKelasMap).flatMap(set => Array.from(set));
+      [...new Set(kelasList)].sort().forEach(k => kelasEl.innerHTML += `<option value="${k}">${k}</option>`);
     }
 
     function updateKategoriDropdown() {
       const kelas = document.getElementById("filterKelas").value;
       const katEl = document.getElementById("filterKategori");
       katEl.innerHTML = '<option value="">📘 Semua Kategori</option>';
-
-      let kategoriList = [];
-      if (kelas && kelasToKategoriMap[kelas]) {
-        kategoriList = Array.from(kelasToKategoriMap[kelas]);
-      } else {
-        Object.values(kelasToKategoriMap).forEach(set => set.forEach(k => kategoriList.push(k)));
-      }
-      [...new Set(kategoriList)].sort().forEach(k => {
-        katEl.innerHTML += `<option value="${k}">${k}</option>`;
-      });
+      let kategoriList = kelas && kelasToKategoriMap[kelas] ? Array.from(kelasToKategoriMap[kelas]) : Object.values(kelasToKategoriMap).flatMap(set => Array.from(set));
+      [...new Set(kategoriList)].sort().forEach(k => katEl.innerHTML += `<option value="${k}">${k}</option>`);
     }
 
     function filterProgress() {
@@ -358,12 +326,10 @@
       const kls = document.getElementById("filterKelas").value;
       const hasil = semuaDataProgress.filter(row => {
         const kelasStr = String(row.Kelas).padStart(3, '0');
-        return (kat === "" || row.Kategori === kat) && (kls === "" || kelasStr === kls);
+        return (!kat || row.Kategori === kat) && (!kls || kelasStr === kls);
       });
       renderProgressTable(hasil);
     }
-
-// ... (lanjutan tetap)
 
     function renderProgressTable(data) {
       const content = document.getElementById("progressContent");
@@ -377,10 +343,6 @@
       });
       html += "</tbody></table>";
       content.innerHTML = html;
-    }
-
-    function tutupProgress() {
-      document.getElementById("progressModal").style.display = "none";
     }
   </script>
 </body>
