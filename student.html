@@ -115,6 +115,31 @@
       color: #0d6efd;
       margin: 20px 0;
     }
+    /* Loading spinner */
+    .loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(255, 255, 255, 0.8);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+    .spinner {
+      width: 3rem;
+      height: 3rem;
+      border: 5px solid #f3f3f3;
+      border-top: 5px solid #0d6efd;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
     /* PWA specific styles */
     @media all and (display-mode: standalone) {
       body {
@@ -128,6 +153,11 @@
   </style>
 </head>
 <body>
+  <!-- Loading overlay -->
+  <div id="loading-overlay" class="loading-overlay d-none">
+    <div class="spinner"></div>
+  </div>
+
   <div class="container">
     <div class="quiz-container">
       <!-- Layar Login -->
@@ -234,6 +264,8 @@
     let timerInterval = null;
     let classInfo = null;
     let studentName = '';
+    let questionOrder = []; // Untuk menyimpan urutan soal yang sudah diacak
+    let optionOrders = {}; // Untuk menyimpan urutan pilihan jawaban yang sudah diacak per soal
 
     // Initialize PWA
     if ('serviceWorker' in navigator) {
@@ -301,12 +333,15 @@
       }
       
       try {
+        showLoading(true);
+        
         // Periksa kode kelas
         const checkResponse = await fetch(`${WEB_APP_URL}?action=checkClassCode&classCode=${classCode}`);
         const checkData = await checkResponse.json();
         
         if (!checkData.valid) {
           showLoginError('Kode kelas tidak ditemukan atau quiz sudah berakhir');
+          showLoading(false);
           return;
         }
         
@@ -325,6 +360,15 @@
         
         if (questionsData.status === 'success') {
           currentQuestions = questionsData.data;
+          
+          // Acak urutan soal
+          questionOrder = shuffleArray([...Array(currentQuestions.length).keys()]);
+          
+          // Acak urutan pilihan jawaban untuk setiap soal
+          currentQuestions.forEach((_, index) => {
+            optionOrders[index] = shuffleArray(['A', 'B', 'C', 'D'].filter(opt => currentQuestions[index][`Pilihan${opt}`]));
+          });
+          
           initializeQuiz();
         } else {
           throw new Error(questionsData.message || 'Gagal memuat pertanyaan');
@@ -332,6 +376,28 @@
       } catch (error) {
         console.error('Error:', error);
         showLoginError('Terjadi kesalahan: ' + error.message);
+      } finally {
+        showLoading(false);
+      }
+    }
+
+    // Fungsi untuk mengacak array (Fisher-Yates algorithm)
+    function shuffleArray(array) {
+      const newArray = [...array];
+      for (let i = newArray.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+      }
+      return newArray;
+    }
+
+    // Tampilkan/sembunyikan loading spinner
+    function showLoading(show) {
+      const loadingElement = document.getElementById('loading-overlay');
+      if (show) {
+        loadingElement.classList.remove('d-none');
+      } else {
+        loadingElement.classList.add('d-none');
       }
     }
 
@@ -426,7 +492,8 @@
       if (index < 0 || index >= currentQuestions.length) return;
       
       currentQuestionIndex = index;
-      const question = currentQuestions[index];
+      const originalIndex = questionOrder[index];
+      const question = currentQuestions[originalIndex];
       
       // Update tampilan
       document.getElementById('question-category').textContent = `Kategori: ${question.Kategori}`;
@@ -436,7 +503,10 @@
       const optionsContainer = document.getElementById('options-container');
       optionsContainer.innerHTML = '';
       
-      ['A', 'B', 'C', 'D'].forEach(option => {
+      // Gunakan urutan pilihan yang sudah diacak
+      const currentOptionOrder = optionOrders[originalIndex];
+      
+      currentOptionOrder.forEach(option => {
         if (question[`Pilihan${option}`]) {
           const btn = document.createElement('button');
           btn.className = 'option-btn';
@@ -507,7 +577,9 @@
       const questionList = document.getElementById('question-list');
       questionList.innerHTML = '';
       
-      currentQuestions.forEach((question, index) => {
+      currentQuestions.forEach((_, index) => {
+        const originalIndex = questionOrder[index];
+        const question = currentQuestions[originalIndex];
         const item = document.createElement('div');
         item.className = `question-item ${studentAnswers[index] !== undefined ? 'answered' : 'unanswered'}`;
         item.innerHTML = `
@@ -537,6 +609,7 @@
     }
 
     // Kembali ke layar quiz
+   
     function backToQuiz() {
       document.getElementById('review-screen').classList.remove('active');
       document.getElementById('quiz-screen').classList.add('active');
