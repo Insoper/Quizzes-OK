@@ -1,7 +1,7 @@
-const CACHE_NAME = 'kuis-interaktif-v3'; // Versi diperbarui
+const CACHE_NAME = 'kuis-interaktif-v3';
 const OFFLINE_URL = 'offline.html';
+const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwKYg9QAx77nM9Pl5iWqHw0_NFkb9l8GWhtXhW2ln-FWp48B1uCMO5IpL49in4SQCPW7Q/exec';
 
-// Daftar aset yang akan di-cache
 const urlsToCache = [
   './',
   './index.html',
@@ -20,25 +20,18 @@ self.addEventListener('install', (event) => {
     caches.open(CACHE_NAME)
       .then((cache) => {
         console.log('Membuka cache...');
-        // Cache satu per satu dengan error handling
         return Promise.all(
           urlsToCache.map((url) => {
             return fetch(url)
               .then((response) => {
-                if (response.ok) {
-                  return cache.put(url, response);
-                }
+                if (response.ok) return cache.put(url, response);
                 console.log('Gagal meng-cache:', url);
               })
-              .catch((err) => {
-                console.log('Error caching:', url, err);
-              });
+              .catch((err) => console.log('Error caching:', url, err));
           })
         );
       })
-      .catch((err) => {
-        console.error('Gagal mengisi cache:', err);
-      })
+      .catch((err) => console.error('Gagal mengisi cache:', err))
   );
 });
 
@@ -58,15 +51,16 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Abaikan non-GET dan request khusus
   if (event.request.method !== 'GET' || 
       event.request.url.startsWith('chrome-extension://') || 
       event.request.url.includes('extension')) {
     return;
   }
 
-  // Handle API requests
-  if (event.request.url.includes('/api/')) {
+  // Perbaikan: Gunakan WEB_APP_URL yang sudah didefinisikan atau ganti dengan pattern URL
+  if (event.request.url.includes('/api/') || 
+      event.request.url.includes(WEB_APP_URL) ||
+      event.request.url.includes('script.google.com/macros')) {
     event.respondWith(
       fetch(event.request)
         .then((response) => {
@@ -83,7 +77,6 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Handle other assets
   event.respondWith(
     caches.match(event.request)
       .then((response) => {
