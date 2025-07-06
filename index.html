@@ -6,7 +6,6 @@
   <title>Quiz Interaktif</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
-    /* Gaya untuk halaman login */
     .login-container {
       background-color: #f8f9fa;
       height: 100vh;
@@ -34,8 +33,6 @@
       width: 100%;
       padding: 10px;
     }
-
-    /* Gaya untuk panel instruktur */
     body.panel-mode {
       background-color: #f8f9fa;
       padding-top: 20px;
@@ -362,8 +359,6 @@
     </div>
   </div>
 
-  <!-- Answer Detail Modal -->
-  
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     // Configuration
@@ -376,22 +371,26 @@
     let resultsData = [];
     let questionsData = {};
 
-// Initialize when DOM is ready
-document.addEventListener('DOMContentLoaded', () => {
-  // Service Worker Registration
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', function() {
-      navigator.serviceWorker.register('sw.js')
-        .then(function(registration) {
-          console.log('ServiceWorker registration successful with scope: ', registration.scope);
-        })
-        .catch(function(err) {
-          console.error('ServiceWorker registration failed: ', err);
-          alert('Fitur offline tidak tersedia: ' + err.message);
+    // Initialize when DOM is ready
+    document.addEventListener('DOMContentLoaded', () => {
+      // Service Worker Registration
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('sw.js')
+            .then(registration => {
+              console.log('✅ ServiceWorker berhasil didaftarkan dengan scope:', registration.scope);
+            })
+            .catch(error => {
+              console.error('❌ Gagal mendaftarkan ServiceWorker:', error);
+              alert('Fitur offline tidak tersedia: ' + error.message);
+            });
         });
+      }
+      
+      checkSession();
+      setupEventListeners();
     });
-  }
-    
+
     // Check session status
     function checkSession() {
       const sessionData = localStorage.getItem('quizSession');
@@ -399,12 +398,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const { username, timestamp } = JSON.parse(sessionData);
         const now = new Date().getTime();
         
-        // Cek jika session masih valid (12 jam)
         if (now - timestamp < SESSION_DURATION) {
-          // Session valid, langsung login
           handleSuccessfulLogin(username);
         } else {
-          // Session expired, hapus data
           localStorage.removeItem('quizSession');
           showLoginPage();
         }
@@ -415,7 +411,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Set up all event listeners
     function setupEventListeners() {
-      // Login form
       document.getElementById('loginForm').addEventListener('submit', function(e) {
         e.preventDefault();
         const username = document.getElementById('username').value.trim();
@@ -428,28 +423,24 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       });
       
-      // Logout button
       document.getElementById('logout-btn').addEventListener('click', function() {
         localStorage.removeItem('quizSession');
         showLoginPage();
         document.getElementById('loginForm').reset();
       });
 
-      // Jika sudah login, setup panel instruktur
       if (document.getElementById('instructorPanel').style.display === 'block') {
         setupInstructorPanel();
       }
     }
 
     function handleSuccessfulLogin(username) {
-      // Simpan session dengan timestamp
       const sessionData = {
         username: username,
         timestamp: new Date().getTime()
       };
       localStorage.setItem('quizSession', JSON.stringify(sessionData));
       
-      // Update UI
       currentInstructor = username;
       document.getElementById('instructor-name').textContent = username;
       document.getElementById('instructor-name-input').value = username;
@@ -470,78 +461,66 @@ document.addEventListener('DOMContentLoaded', () => {
       document.body.classList.add('panel-mode');
     }
 
-    // Setup instructor panel functionality
-function setupInstructorPanel() {
-  // Quiz creation form
-  document.getElementById('create-quiz-form').addEventListener('submit', function(e) {
-    e.preventDefault();
-    createNewQuiz();
-  });
-  
-  // Results filter button
-  document.getElementById('filter-results').addEventListener('click', function() {
-    loadResults();
-  });
-  
-  // Tab switching
-  document.querySelectorAll('[data-bs-toggle="tab"]').forEach(tab => {
-    tab.addEventListener('shown.bs.tab', function(event) {
-      if (event.target.id === 'active-tab') {
-        loadActiveClasses();
-      } else if (event.target.id === 'results-tab') {
-        loadResults();
-      }
-    });
-  });
-
-  // Load initial data
-  loadCategories();
-  loadActiveClasses();
-}
-
-    // Load categories from spreadsheet
-    async function loadCategories() {
-  try {
-    const response = await fetch(`${WEB_APP_URL}?action=getCategories`);
-    const data = await response.json();
-    
-    if (data.status === 'success' && data.data && data.data.length > 0) {
-      const select = document.getElementById('quiz-categories');
-      const filterSelect = document.getElementById('filter-category');
-      
-      // Clear existing options
-      select.innerHTML = '';
-      filterSelect.innerHTML = '<option value="all">Semua Kategori</option>';
-      
-      // Add unique categories
-      const uniqueCategories = [...new Set(data.data)];
-      uniqueCategories.forEach(category => {
-        if (category) {
-          const option = document.createElement('option');
-          option.value = category;
-          option.textContent = category;
-          select.appendChild(option);
-          
-          // Tambahkan juga ke filter select
-          const filterOption = option.cloneNode(true);
-          filterSelect.appendChild(filterOption);
-        }
+    function setupInstructorPanel() {
+      document.getElementById('create-quiz-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        createNewQuiz();
       });
-    } else {
-      console.error('Data kategori kosong atau format tidak valid');
-      // Tambahkan opsi default jika tidak ada kategori
-      const select = document.getElementById('quiz-categories');
-      select.innerHTML = '<option value="" disabled>Belum ada kategori</option>';
-    }
-  } catch (error) {
-    console.error('Gagal memuat kategori:', error);
-    // Tambahkan fallback UI
-    const select = document.getElementById('quiz-categories');
-    select.innerHTML = '<option value="" disabled>Gagal memuat kategori</option>';
-  }
-}
+      
+      document.getElementById('filter-results').addEventListener('click', function() {
+        loadResults();
+      });
+      
+      document.querySelectorAll('[data-bs-toggle="tab"]').forEach(tab => {
+        tab.addEventListener('shown.bs.tab', function(event) {
+          if (event.target.id === 'active-tab') {
+            loadActiveClasses();
+          } else if (event.target.id === 'results-tab') {
+            loadResults();
+          }
+        });
+      });
 
-    // Create new quiz
+      loadCategories();
+      loadActiveClasses();
+    }
+
+    async function loadCategories() {
+      try {
+        const response = await fetch(`${WEB_APP_URL}?action=getCategories`);
+        const data = await response.json();
+        
+        if (data.status === 'success' && data.data && data.data.length > 0) {
+          const select = document.getElementById('quiz-categories');
+          const filterSelect = document.getElementById('filter-category');
+          
+          select.innerHTML = '';
+          filterSelect.innerHTML = '<option value="all">Semua Kategori</option>';
+          
+          const uniqueCategories = [...new Set(data.data)];
+          uniqueCategories.forEach(category => {
+            if (category) {
+              const option = document.createElement('option');
+              option.value = category;
+              option.textContent = category;
+              select.appendChild(option);
+              
+              const filterOption = option.cloneNode(true);
+              filterSelect.appendChild(filterOption);
+            }
+          });
+        } else {
+          console.error('Data kategori kosong atau format tidak valid');
+          const select = document.getElementById('quiz-categories');
+          select.innerHTML = '<option value="" disabled>Belum ada kategori</option>';
+        }
+      } catch (error) {
+        console.error('Gagal memuat kategori:', error);
+        const select = document.getElementById('quiz-categories');
+        select.innerHTML = '<option value="" disabled>Gagal memuat kategori</option>';
+      }
+    }
+
     async function createNewQuiz() {
       const categories = Array.from(document.getElementById('quiz-categories').selectedOptions)
         .map(option => option.value)
@@ -560,7 +539,6 @@ function setupInstructorPanel() {
         return;
       }
       
-      // Show loading state
       const createBtn = document.getElementById('create-quiz-btn');
       const createText = document.getElementById('create-quiz-text');
       const createSpinner = document.getElementById('create-quiz-spinner');
@@ -570,7 +548,6 @@ function setupInstructorPanel() {
       createSpinner.classList.remove('d-none');
       
       try {
-        // First, verify there are questions for selected categories
         const questionsResponse = await fetch(`${WEB_APP_URL}?action=getQuestions&categories=${encodeURIComponent(categories)}`);
         const questionsData = await questionsResponse.json();
         
@@ -578,17 +555,13 @@ function setupInstructorPanel() {
           throw new Error('Tidak ada soal untuk kategori yang dipilih');
         }
         
-        // Then create the new class
         const response = await fetch(`${WEB_APP_URL}?action=createClass&categories=${encodeURIComponent(categories)}&duration=${duration}&instructor=${encodeURIComponent(instructor)}`);
         const data = await response.json();
         
         if (data.status === 'success') {
           alert(`Quiz berhasil dibuat dengan kode: ${data.classCode}`);
           loadActiveClasses();
-          
-          // Switch to active tab
-          const activeTab = new bootstrap.Tab(document.getElementById('active-tab'));
-          activeTab.show();
+          new bootstrap.Tab(document.getElementById('active-tab')).show();
         } else {
           throw new Error(data.message || 'Gagal membuat quiz');
         }
@@ -596,55 +569,44 @@ function setupInstructorPanel() {
         console.error('Error:', error);
         alert('Terjadi kesalahan saat membuat quiz: ' + error.message);
       } finally {
-        // Reset loading state
         createBtn.disabled = false;
         createText.textContent = 'Buat Quiz';
         createSpinner.classList.add('d-none');
       }
     }
 
-    // Load active classes
     async function loadActiveClasses() {
-  try {
-    const tbody = document.querySelector('#active-quiz-table tbody');
-    tbody.innerHTML = '<tr><td colspan="7" class="text-center"><span class="loading-spinner me-2"></span>Memuat data quiz...</td></tr>';
-    
-    // Gunakan try-catch untuk fetch
-    let response;
-    try {
-      response = await fetch(`${WEB_APP_URL}?action=getActiveClasses`);
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      try {
+        const tbody = document.querySelector('#active-quiz-table tbody');
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center"><span class="loading-spinner me-2"></span>Memuat data quiz...</td></tr>';
+        
+        const response = await fetch(`${WEB_APP_URL}?action=getActiveClasses`);
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+          activeClasses = data.data || [];
+          renderActiveClassesTable();
+        } else {
+          throw new Error(data.message || 'Format response tidak valid');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        const tbody = document.querySelector('#active-quiz-table tbody');
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="7" class="text-center text-danger">
+              ${error.message || 'Gagal memuat data quiz'}
+              <button class="btn btn-sm btn-outline-primary mt-2" onclick="loadActiveClasses()">
+                Coba Lagi
+              </button>
+            </td>
+          </tr>
+        `;
       }
-    } catch (fetchError) {
-      console.error('Fetch error:', fetchError);
-      throw new Error('Gagal terhubung ke server. Cek koneksi internet Anda.');
     }
 
-    const data = await response.json();
-    
-    if (data.status === 'success') {
-      activeClasses = data.data || []; // Pastikan array meski kosong
-      renderActiveClassesTable();
-    } else {
-      throw new Error(data.message || 'Format response tidak valid');
-    }
-  } catch (error) {
-    console.error('Error:', error);
-    const tbody = document.querySelector('#active-quiz-table tbody');
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="7" class="text-center text-danger">
-          ${error.message || 'Gagal memuat data quiz'}
-          <button class="btn btn-sm btn-outline-primary mt-2" onclick="loadActiveClasses()">
-            Coba Lagi
-          </button>
-        </td>
-      </tr>
-    `;
-  }
-}
-    // Render active classes table
     function renderActiveClassesTable() {
       const tbody = document.querySelector('#active-quiz-table tbody');
       if (!tbody) return;
@@ -668,13 +630,12 @@ function setupInstructorPanel() {
           <td>${startTime ? formatDateTime(startTime) : '-'}</td>
           <td>${endTime ? formatDateTime(endTime) : '-'}</td>
           <td>${cls.Instruktur || '-'}</td>
-          `;
+        `;
         
         tbody.appendChild(row);
       });
     }
 
-    // Format date time
     function formatDateTime(date) {
       if (!date) return '-';
       return date.toLocaleString('id-ID', {
@@ -686,27 +647,10 @@ function setupInstructorPanel() {
       });
     }
 
-    
-
-    // Get option text
-    function getOptionText(question, optionKey) {
-      if (!question) return 'Tidak ada data soal';
-      
-      switch(optionKey) {
-        case 'A': return question.PilihanA || 'Tidak ada pilihan';
-        case 'B': return question.PilihanB || 'Tidak ada pilihan';
-        case 'C': return question.PilihanC || 'Tidak ada pilihan';
-        case 'D': return question.PilihanD || 'Tidak ada pilihan';
-        default: return 'Tidak menjawab';
-      }
-    }
-
-    // Load results
     async function loadResults() {
       const category = document.getElementById('filter-category').value;
       const classCode = document.getElementById('filter-class').value.trim();
       
-      // Show loading state
       const filterBtn = document.getElementById('filter-results');
       const filterText = document.getElementById('filter-results-text');
       const filterSpinner = document.getElementById('filter-results-spinner');
@@ -715,7 +659,6 @@ function setupInstructorPanel() {
       filterText.textContent = 'Memuat hasil...';
       filterSpinner.classList.remove('d-none');
       
-      // Show loading in table
       const tbody = document.querySelector('#results-table tbody');
       if (tbody) {
         tbody.innerHTML = `
@@ -756,14 +699,12 @@ function setupInstructorPanel() {
           `;
         }
       } finally {
-        // Reset loading state
         filterBtn.disabled = false;
         filterText.textContent = 'Terapkan Filter';
         filterSpinner.classList.add('d-none');
       }
     }
 
-    // Render results table
     function renderResultsTable() {
       const tbody = document.querySelector('#results-table tbody');
       if (!tbody) return;
@@ -785,13 +726,12 @@ function setupInstructorPanel() {
           <td>${result.KodeKelas || '-'}</td>
           <td>${result.Kategori || '-'}</td>
           <td>${result.Skor || '0'}</td>
-          `;
+        `;
         
         tbody.appendChild(row);
       });
     }
 
-    // Periodically check session (every 5 minutes)
     setInterval(checkSession, 5 * 60 * 1000);
   </script>
 </body>
