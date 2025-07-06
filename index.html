@@ -595,36 +595,45 @@ function setupInstructorPanel() {
 
     // Load active classes
     async function loadActiveClasses() {
-      try {
-        // Show loading state
-        const tbody = document.querySelector('#active-quiz-table tbody');
-        if (tbody) {
-          tbody.innerHTML = '<tr><td colspan="7" class="text-center"><span class="loading-spinner me-2"></span>Memuat data quiz...</td></tr>';
-        }
-        
-        const response = await fetch(`${WEB_APP_URL}?action=getActiveClasses`);
-        
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        
-        if (data.status === 'success') {
-          activeClasses = data.data;
-          renderActiveClassesTable();
-        } else {
-          throw new Error(data.message || 'Gagal memuat quiz aktif');
-        }
-      } catch (error) {
-        console.error('Error:', error);
-        const tbody = document.querySelector('#active-quiz-table tbody');
-        if (tbody) {
-          tbody.innerHTML = '<tr><td colspan="7" class="text-center text-danger">Gagal memuat data quiz</td></tr>';
-        }
+  try {
+    const tbody = document.querySelector('#active-quiz-table tbody');
+    tbody.innerHTML = '<tr><td colspan="7" class="text-center"><span class="loading-spinner me-2"></span>Memuat data quiz...</td></tr>';
+    
+    // Gunakan try-catch untuk fetch
+    let response;
+    try {
+      response = await fetch(`${WEB_APP_URL}?action=getActiveClasses`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
+    } catch (fetchError) {
+      console.error('Fetch error:', fetchError);
+      throw new Error('Gagal terhubung ke server. Cek koneksi internet Anda.');
     }
 
+    const data = await response.json();
+    
+    if (data.status === 'success') {
+      activeClasses = data.data || []; // Pastikan array meski kosong
+      renderActiveClassesTable();
+    } else {
+      throw new Error(data.message || 'Format response tidak valid');
+    }
+  } catch (error) {
+    console.error('Error:', error);
+    const tbody = document.querySelector('#active-quiz-table tbody');
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="7" class="text-center text-danger">
+          ${error.message || 'Gagal memuat data quiz'}
+          <button class="btn btn-sm btn-outline-primary mt-2" onclick="loadActiveClasses()">
+            Coba Lagi
+          </button>
+        </td>
+      </tr>
+    `;
+  }
+}
     // Render active classes table
     function renderActiveClassesTable() {
       const tbody = document.querySelector('#active-quiz-table tbody');
