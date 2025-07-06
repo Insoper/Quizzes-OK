@@ -377,11 +377,18 @@
     let questionsData = {};
 
     // Initialize when DOM is ready
-    document.addEventListener('DOMContentLoaded', function() {
-      checkSession();
-      setupEventListeners();
-    });
-
+    // Pastikan kode ini dijalankan setelah halaman selesai load
+document.addEventListener('DOMContentLoaded', () => {
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js')
+      .then(registration => {
+        console.log('✅ ServiceWorker berhasil didaftarkan dengan scope:', registration.scope);
+      })
+      .catch(error => {
+        console.error('❌ Gagal mendaftarkan ServiceWorker:', error);
+      });
+  }
+});
     // Check session status
     function checkSession() {
       const sessionData = localStorage.getItem('quizSession');
