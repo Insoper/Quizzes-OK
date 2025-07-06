@@ -246,7 +246,7 @@
             <h5 class="mb-0">Buat Quiz Baru</h5>
           </div>
           <div class="card-body">
-            <form id="create-quiz-form">
+            <form id="create-quiz-form" autocomplete="off">
               <div class="mb-3">
                 <label for="quiz-categories" class="form-label">Pilih Kategori</label>
                 <select multiple class="form-select" id="quiz-categories" required>
@@ -370,6 +370,7 @@
     let activeClasses = [];
     let resultsData = [];
     let questionsData = {};
+    let isCreatingQuiz = false; // Flag untuk mencegah double submit
 
     // Initialize when DOM is ready
     document.addEventListener('DOMContentLoaded', () => {
@@ -462,10 +463,10 @@
     }
 
     function setupInstructorPanel() {
-      document.getElementById('create-quiz-form').addEventListener('submit', function(e) {
-        e.preventDefault();
-        createNewQuiz();
-      });
+      // Hapus event listener sebelumnya jika ada
+      document.getElementById('create-quiz-form').removeEventListener('submit', handleQuizSubmit);
+      // Tambahkan event listener baru
+      document.getElementById('create-quiz-form').addEventListener('submit', handleQuizSubmit);
       
       document.getElementById('filter-results').addEventListener('click', function() {
         loadResults();
@@ -483,6 +484,78 @@
 
       loadCategories();
       loadActiveClasses();
+    }
+
+    // Fungsi terpisah untuk handle submit quiz
+    function handleQuizSubmit(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      createNewQuiz();
+    }
+
+    async function createNewQuiz() {
+      // Cek jika proses sedang berjalan
+      if (isCreatingQuiz) return;
+      isCreatingQuiz = true;
+
+      const categories = Array.from(document.getElementById('quiz-categories').selectedOptions)
+        .map(option => option.value)
+        .join(',');
+      
+      const duration = document.getElementById('quiz-duration').value;
+      const instructor = document.getElementById('instructor-name-input').value.trim();
+      
+      if (!instructor) {
+        alert('Nama instruktur harus diisi');
+        isCreatingQuiz = false;
+        return;
+      }
+      
+      if (!categories) {
+        alert('Pilih minimal satu kategori');
+        isCreatingQuiz = false;
+        return;
+      }
+      
+      const createBtn = document.getElementById('create-quiz-btn');
+      const createText = document.getElementById('create-quiz-text');
+      const createSpinner = document.getElementById('create-quiz-spinner');
+      
+      createBtn.disabled = true;
+      createText.textContent = 'Membuat quiz...';
+      createSpinner.classList.remove('d-none');
+      
+      try {
+        const questionsResponse = await fetch(`${WEB_APP_URL}?action=getQuestions&categories=${encodeURIComponent(categories)}`, {
+          cache: 'no-store'
+        });
+        const questionsData = await questionsResponse.json();
+        
+        if (questionsData.status !== 'success' || !questionsData.data || questionsData.data.length === 0) {
+          throw new Error('Tidak ada soal untuk kategori yang dipilih');
+        }
+        
+        const response = await fetch(`${WEB_APP_URL}?action=createClass&categories=${encodeURIComponent(categories)}&duration=${duration}&instructor=${encodeURIComponent(instructor)}`, {
+          cache: 'no-store'
+        });
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+          alert(`Quiz berhasil dibuat dengan kode: ${data.classCode}`);
+          loadActiveClasses();
+          new bootstrap.Tab(document.getElementById('active-tab')).show();
+        } else {
+          throw new Error(data.message || 'Gagal membuat quiz');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        alert('Terjadi kesalahan saat membuat quiz: ' + error.message);
+      } finally {
+        createBtn.disabled = false;
+        createText.textContent = 'Buat Quiz';
+        createSpinner.classList.add('d-none');
+        isCreatingQuiz = false;
+      }
     }
 
     async function loadCategories() {
@@ -518,60 +591,6 @@
         console.error('Gagal memuat kategori:', error);
         const select = document.getElementById('quiz-categories');
         select.innerHTML = '<option value="" disabled>Gagal memuat kategori</option>';
-      }
-    }
-
-    async function createNewQuiz() {
-      const categories = Array.from(document.getElementById('quiz-categories').selectedOptions)
-        .map(option => option.value)
-        .join(',');
-      
-      const duration = document.getElementById('quiz-duration').value;
-      const instructor = document.getElementById('instructor-name-input').value.trim();
-      
-      if (!instructor) {
-        alert('Nama instruktur harus diisi');
-        return;
-      }
-      
-      if (!categories) {
-        alert('Pilih minimal satu kategori');
-        return;
-      }
-      
-      const createBtn = document.getElementById('create-quiz-btn');
-      const createText = document.getElementById('create-quiz-text');
-      const createSpinner = document.getElementById('create-quiz-spinner');
-      
-      createBtn.disabled = true;
-      createText.textContent = 'Membuat quiz...';
-      createSpinner.classList.remove('d-none');
-      
-      try {
-        const questionsResponse = await fetch(`${WEB_APP_URL}?action=getQuestions&categories=${encodeURIComponent(categories)}`);
-        const questionsData = await questionsResponse.json();
-        
-        if (questionsData.status !== 'success' || !questionsData.data || questionsData.data.length === 0) {
-          throw new Error('Tidak ada soal untuk kategori yang dipilih');
-        }
-        
-        const response = await fetch(`${WEB_APP_URL}?action=createClass&categories=${encodeURIComponent(categories)}&duration=${duration}&instructor=${encodeURIComponent(instructor)}`);
-        const data = await response.json();
-        
-        if (data.status === 'success') {
-          alert(`Quiz berhasil dibuat dengan kode: ${data.classCode}`);
-          loadActiveClasses();
-          new bootstrap.Tab(document.getElementById('active-tab')).show();
-        } else {
-          throw new Error(data.message || 'Gagal membuat quiz');
-        }
-      } catch (error) {
-        console.error('Error:', error);
-        alert('Terjadi kesalahan saat membuat quiz: ' + error.message);
-      } finally {
-        createBtn.disabled = false;
-        createText.textContent = 'Buat Quiz';
-        createSpinner.classList.add('d-none');
       }
     }
 
