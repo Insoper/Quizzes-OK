@@ -318,18 +318,23 @@
 
     // Fungsi untuk mengubah URL Google Drive menjadi URL yang bisa diakses
     function convertGoogleDriveUrl(url) {
-      if (!url || !url.includes('drive.google.com')) return null;
-      
-      const fileIdMatch = url.match(/\/file\/d\/([^\/]+)/) || 
-                         url.match(/id=([^\/&]+)/) || 
-                         url.match(/([^\/]{25,})/);
-      
-      if (fileIdMatch && fileIdMatch[1]) {
-        return `https://drive.google.com/uc?export=view&id=${fileIdMatch[1]}`;
-      }
-      
-      return null;
-    }
+  if (!url) return null;
+
+  const cleanUrl = url.trim();
+
+  if (!cleanUrl.includes('drive.google.com')) return null;
+
+  const fileIdMatch = cleanUrl.match(/\/file\/d\/([^\/]+)/) || 
+                      cleanUrl.match(/id=([^\/&]+)/) || 
+                      cleanUrl.match(/([^\/]{25,})/);
+
+  if (fileIdMatch && fileIdMatch[1]) {
+    return `https://drive.google.com/uc?export=view&id=${fileIdMatch[1]}`;
+  }
+
+  return null;
+}
+
 
     async function startQuiz() {
       studentName = document.getElementById('student-name').value.trim();
@@ -483,6 +488,9 @@
       currentQuestionIndex = index;
       const originalIndex = questionOrder[index];
       const question = currentQuestions[originalIndex];
+      console.log('Link mentah dari sheet:', question.GambarSoal);
+      console.log('Link setelah convert:', convertGoogleDriveUrl(question.GambarSoal));
+
       
       if (!question) {
         console.error('Question data not found for index:', index);
@@ -494,39 +502,42 @@
       
       // Handle gambar soal
       const imgContainer = document.getElementById('question-image-container');
-      const imgElement = document.getElementById('question-image');
-      const imgLoading = document.getElementById('image-loading');
-      
-      // Reset tampilan gambar
-      imgElement.classList.add('d-none');
+const imgElement = document.getElementById('question-image');
+const imgLoading = document.getElementById('image-loading');
+
+// Reset
+imgElement.classList.add('d-none');
+imgLoading.classList.add('d-none');
+
+if (question.GambarSoal) {
+  const imageUrl = convertGoogleDriveUrl(question.GambarSoal);
+  console.log('Image URL:', imageUrl); // untuk debug
+
+  if (imageUrl) {
+    imgElement.src = imageUrl;
+
+    imgElement.onload = () => {
+      imgElement.classList.remove('d-none');
       imgLoading.classList.add('d-none');
-      
-      // Periksa apakah ada gambar soal
-      if (question.GambarSoal) {
-        const imageUrl = convertGoogleDriveUrl(question.GambarSoal);
-        if (imageUrl) {
-          imgContainer.style.display = 'block';
-          imgLoading.classList.remove('d-none');
-          
-          // Gunakan Image object untuk preload
-          const tempImg = new Image();
-          tempImg.onload = function() {
-            imgElement.src = imageUrl;
-            imgElement.classList.remove('d-none');
-            imgLoading.classList.add('d-none');
-          };
-          tempImg.onerror = function() {
-            console.error('Gagal memuat gambar');
-            imgContainer.style.display = 'none';
-            imgLoading.classList.add('d-none');
-          };
-          tempImg.src = imageUrl;
-        } else {
-          imgContainer.style.display = 'none';
-        }
-      } else {
-        imgContainer.style.display = 'none';
-      }
+      imgContainer.style.display = 'block';
+    };
+
+    imgElement.onerror = () => {
+      imgElement.alt = '[Gagal memuat gambar]';
+      imgElement.classList.remove('d-none');
+      imgLoading.classList.add('d-none');
+      imgContainer.style.display = 'block';
+    };
+
+    imgLoading.classList.remove('d-none');
+    imgContainer.style.display = 'block';
+  } else {
+    imgContainer.style.display = 'none';
+  }
+} else {
+  imgContainer.style.display = 'none';
+}
+
       
       const optionsContainer = document.getElementById('options-container');
       optionsContainer.innerHTML = '';
