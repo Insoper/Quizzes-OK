@@ -159,6 +159,14 @@
         min-height: 100vh;
       }
     }
+    .image-loading {
+      background-color: #f1f1f1;
+      min-height: 150px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+    }
   </style>
 </head>
 <body>
@@ -203,7 +211,10 @@
           <h4 id="question-text">Memuat pertanyaan...</h4>
           
           <div id="question-image-container">
-            <img id="question-image" src="" alt="Gambar soal" class="img-fluid rounded">
+            <div class="image-loading d-none" id="image-loading">
+              <div class="spinner spinner-sm"></div>
+            </div>
+            <img id="question-image" src="" alt="Gambar soal" class="img-fluid rounded d-none">
           </div>
           
           <div class="options mt-4" id="options-container"></div>
@@ -303,6 +314,21 @@
       document.getElementById('back-to-quiz-btn').addEventListener('click', backToQuiz);
       document.getElementById('submit-quiz-btn').addEventListener('click', confirmSubmit);
       document.getElementById('finish-btn').addEventListener('click', finishQuiz);
+    }
+
+    // Fungsi untuk mengubah URL Google Drive menjadi URL yang bisa diakses
+    function convertGoogleDriveUrl(url) {
+      if (!url || !url.includes('drive.google.com')) return null;
+      
+      const fileIdMatch = url.match(/\/file\/d\/([^\/]+)/) || 
+                         url.match(/id=([^\/&]+)/) || 
+                         url.match(/([^\/]{25,})/);
+      
+      if (fileIdMatch && fileIdMatch[1]) {
+        return `https://drive.google.com/uc?export=view&id=${fileIdMatch[1]}`;
+      }
+      
+      return null;
     }
 
     async function startQuiz() {
@@ -452,66 +478,100 @@
     }
 
     function showQuestion(index) {
-  if (index < 0 || index >= currentQuestions.length) return;
-  
-  currentQuestionIndex = index;
-  const originalIndex = questionOrder[index];
-  const question = currentQuestions[originalIndex];
-  
-  if (!question) {
-    console.error('Question data not found for index:', index);
-    return;
-  }
-  
-  document.getElementById('question-category').textContent = `Kategori: ${question.Kategori}`;
-  document.getElementById('question-text').textContent = question.Pertanyaan;
-  
-  // Handle gambar soal
-const imgContainer = document.getElementById('question-image-container');
-const imgElement = document.getElementById('question-image');
-
-// Tampilkan gambar jika ada GambarSoal dengan format data:image atau http/https
-if (question.GambarSoal && (question.GambarSoal.startsWith('data:image') || question.GambarSoal.startsWith('http'))) {
-  imgElement.src = question.GambarSoal;
-  imgContainer.style.display = 'block';
-
-  // Handle error gambar
-  imgElement.onerror = function() {
-    console.error('Gagal memuat gambar:', question.GambarSoal);
-    imgContainer.style.display = 'none';
-  };
-} else {
-  imgContainer.style.display = 'none';
-}
-
-
-  
-  const optionsContainer = document.getElementById('options-container');
-  optionsContainer.innerHTML = '';
-  
-  const currentOptionOrder = optionOrders[originalIndex];
-  
-  currentOptionOrder.forEach(option => {
-    if (question[`Pilihan${option}`]) {
-      const btn = document.createElement('button');
-      btn.className = 'option-btn';
-      btn.setAttribute('data-option', option);
-      btn.textContent = question[`Pilihan${option}`];
+      if (index < 0 || index >= currentQuestions.length) return;
       
-      if (studentAnswers[index] === option) {
-        btn.classList.add('selected');
+      currentQuestionIndex = index;
+      const originalIndex = questionOrder[index];
+      const question = currentQuestions[originalIndex];
+      
+      if (!question) {
+        console.error('Question data not found for index:', index);
+        return;
       }
       
-      optionsContainer.appendChild(btn);
+      document.getElementById('question-category').textContent = `Kategori: ${question.Kategori}`;
+      document.getElementById('question-text').textContent = question.Pertanyaan;
+      
+      // Handle gambar soal
+      const imgContainer = document.getElementById('question-image-container');
+      const imgElement = document.getElementById('question-image');
+      const imgLoading = document.getElementById('image-loading');
+      
+      // Reset tampilan gambar
+      imgElement.classList.add('d-none');
+      imgLoading.classList.add('d-none');
+      
+      // Periksa apakah ada gambar soal
+      if (question.GambarSoal) {
+        const imageUrl = convertGoogleDriveUrl(question.GambarSoal);
+        if (imageUrl) {
+          imgContainer.style.display = 'block';
+          imgLoading.classList.remove('d-none');
+          
+          // Gunakan Image object untuk preload
+          const tempImg = new Image();
+          tempImg.onload = function() {
+            imgElement.src = imageUrl;
+            imgElement.classList.remove('d-none');
+            imgLoading.classList.add('d-none');
+          };
+          tempImg.onerror = function() {
+            console.error('Gagal memuat gambar');
+            imgContainer.style.display = 'none';
+            imgLoading.classList.add('d-none');
+          };
+          tempImg.src = imageUrl;
+        } else {
+          imgContainer.style.display = 'none';
+        }
+      } else {
+        imgContainer.style.display = 'none';
+      }
+      
+      const optionsContainer = document.getElementById('options-container');
+      optionsContainer.innerHTML = '';
+      
+      const currentOptionOrder = optionOrders[originalIndex];
+      
+      currentOptionOrder.forEach(option => {
+        if (question[`Pilihan${option}`]) {
+          const btn = document.createElement('button');
+          btn.className = 'option-btn';
+          btn.setAttribute('data-option', option);
+          
+          // Cek jika opsi mengandung URL gambar
+          if (question[`Pilihan${option}`].includes('http')) {
+            const imgUrl = convertGoogleDriveUrl(question[`Pilihan${option}`]);
+            if (imgUrl) {
+              const img = document.createElement('img');
+              img.src = imgUrl;
+              img.style.maxHeight = '100px';
+              img.style.maxWidth = '100%';
+              img.onerror = function() {
+                btn.textContent = '[Gambar tidak tersedia]';
+              };
+              btn.appendChild(img);
+            } else {
+              btn.textContent = '[Gambar]';
+            }
+          } else {
+            btn.textContent = question[`Pilihan${option}`];
+          }
+          
+          if (studentAnswers[index] === option) {
+            btn.classList.add('selected');
+          }
+          
+          optionsContainer.appendChild(btn);
+        }
+      });
+      
+      document.getElementById('prev-btn').disabled = index === 0;
+      document.getElementById('next-btn').textContent = 
+        index === currentQuestions.length - 1 ? 'Selesai' : 'Selanjutnya';
+      
+      updateProgressIndicator();
     }
-  });
-  
-  document.getElementById('prev-btn').disabled = index === 0;
-  document.getElementById('next-btn').textContent = 
-    index === currentQuestions.length - 1 ? 'Selesai' : 'Selanjutnya';
-  
-  updateProgressIndicator();
-}
 
     function selectAnswer(button) {
       const selectedOption = button.getAttribute('data-option');
@@ -642,7 +702,6 @@ if (question.GambarSoal && (question.GambarSoal.startsWith('data:image') || ques
         const q = currentQuestions[originalIndex];
         const studentAnswer = studentAnswers[index] || '-';
         
-        // Perbaikan pengecekan jawaban
         const isCorrect = studentAnswer === q.KunciJawaban;
         
         const item = document.createElement('div');
@@ -650,6 +709,7 @@ if (question.GambarSoal && (question.GambarSoal.startsWith('data:image') || ques
         item.innerHTML = `
           <h5>Soal ${index + 1}</h5>
           <p><strong>Pertanyaan:</strong> ${q.Pertanyaan}</p>
+          ${q.GambarSoal ? `<p><img src="${convertGoogleDriveUrl(q.GambarSoal) || ''}" style="max-width: 200px; max-height: 150px;"></p>` : ''}
           <p><strong>Jawaban Anda:</strong> ${getOptionText(q, studentAnswer)}</p>
           <p><strong>Jawaban Benar:</strong> ${getOptionText(q, q.KunciJawaban)}</p>
           <p class="result-status ${isCorrect ? 'correct' : 'incorrect'}">
@@ -668,7 +728,14 @@ if (question.GambarSoal && (question.GambarSoal.startsWith('data:image') || ques
       if (!question) return 'Tidak ada data soal';
       if (optionKey === '-') return 'Tidak menjawab';
       
-      return question[`Pilihan${optionKey}`] || 'Tidak ada pilihan';
+      const optionText = question[`Pilihan${optionKey}`] || 'Tidak ada pilihan';
+      
+      // Jika opsi mengandung URL gambar, kembalikan teks alternatif
+      if (optionText.includes('http')) {
+        return '[Gambar]';
+      }
+      
+      return optionText;
     }
 
     function finishQuiz() {
