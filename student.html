@@ -467,14 +467,15 @@
   document.getElementById('question-text').textContent = question.Pertanyaan;
   
   // Handle gambar soal
-  const imgContainer = document.getElementById('question-image-container');
-  const imgElement = document.getElementById('question-image');
-  
-  // Periksa apakah ada gambar soal
-  if (question.GambarSoal && (question.GambarSoal.startsWith('data:image') || question.GambarSoal.startsWith('http'))) {
+const imgContainer = document.getElementById('question-image-container');
+const imgElement = document.getElementById('question-image');
+
+// Tampilkan gambar jika ada GambarSoal dengan format data:image atau http/https
+if (question.GambarSoal && (question.GambarSoal.startsWith('data:image') || question.GambarSoal.startsWith('http'))) {
   imgElement.src = question.GambarSoal;
   imgContainer.style.display = 'block';
 
+  // Handle error gambar
   imgElement.onerror = function() {
     console.error('Gagal memuat gambar:', question.GambarSoal);
     imgContainer.style.display = 'none';
@@ -482,6 +483,7 @@
 } else {
   imgContainer.style.display = 'none';
 }
+
 
   
   const optionsContainer = document.getElementById('options-container');
