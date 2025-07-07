@@ -471,18 +471,18 @@
   const imgElement = document.getElementById('question-image');
   
   // Periksa apakah ada gambar soal
-  if (question.GambarSoal && question.GambarSoal.startsWith('data:image')) {
-    imgElement.src = question.GambarSoal;
-    imgContainer.style.display = 'block';
-    
-    // Handle error gambar
-    imgElement.onerror = function() {
-      console.error('Gagal memuat gambar');
-      imgContainer.style.display = 'none';
-    };
-  } else {
+  if (question.GambarSoal && (question.GambarSoal.startsWith('data:image') || question.GambarSoal.startsWith('http'))) {
+  imgElement.src = question.GambarSoal;
+  imgContainer.style.display = 'block';
+
+  imgElement.onerror = function() {
+    console.error('Gagal memuat gambar:', question.GambarSoal);
     imgContainer.style.display = 'none';
-  }
+  };
+} else {
+  imgContainer.style.display = 'none';
+}
+
   
   const optionsContainer = document.getElementById('options-container');
   optionsContainer.innerHTML = '';
