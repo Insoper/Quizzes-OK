@@ -115,7 +115,17 @@
       color: #0d6efd;
       margin: 20px 0;
     }
-    /* Loading spinner */
+    #question-image-container {
+      margin: 15px 0;
+      display: none;
+      text-align: center;
+    }
+    #question-image {
+      max-width: 100%;
+      max-height: 300px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
     .loading-overlay {
       position: fixed;
       top: 0;
@@ -140,7 +150,6 @@
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
     }
-    /* PWA specific styles */
     @media all and (display-mode: standalone) {
       body {
         padding-top: 0;
@@ -153,14 +162,13 @@
   </style>
 </head>
 <body>
-  <!-- Loading overlay -->
   <div id="loading-overlay" class="loading-overlay d-none">
     <div class="spinner"></div>
   </div>
 
   <div class="container">
     <div class="quiz-container">
-      <!-- Layar Login -->
+      <!-- Login Screen -->
       <div id="login-screen" class="screen active">
         <h1 class="text-center mb-4">Masuk Quiz</h1>
         <div class="card">
@@ -181,27 +189,24 @@
         <div id="login-error" class="alert alert-danger mt-3 d-none"></div>
       </div>
 
-      <!-- Layar Quiz -->
+      <!-- Quiz Screen -->
       <div id="quiz-screen" class="screen">
         <div class="d-flex justify-content-between align-items-center mb-4">
           <div class="timer" id="timer">01:00:00</div>
           <button id="review-btn" class="btn btn-outline-primary">Tinjau Jawaban</button>
         </div>
         
-        <div class="progress-indicator" id="progress-indicator">
-          <!-- Indikator soal akan diisi oleh JavaScript -->
-        </div>
+        <div class="progress-indicator" id="progress-indicator"></div>
         
         <div class="question-container">
-          <h5 id="question-category" class="text-muted mb-3">Kategori: HD785-7</h5>
-          <h4 id="question-text">Berapa Payload HD785-7?</h4>
+          <h5 id="question-category" class="text-muted mb-3">Kategori: </h5>
+          <h4 id="question-text">Memuat pertanyaan...</h4>
           
-          <div class="options mt-4" id="options-container">
-            <button class="option-btn" data-option="A">A. 91 ton</button>
-            <button class="option-btn" data-option="B">B. 100 ton</button>
-            <button class="option-btn" data-option="C">C. 78.5 ton</button>
-            <button class="option-btn" data-option="D">D. 110 ton</button>
+          <div id="question-image-container">
+            <img id="question-image" src="" alt="Gambar soal" class="img-fluid rounded">
           </div>
+          
+          <div class="options mt-4" id="options-container"></div>
         </div>
         
         <div class="d-flex justify-content-between mt-4">
@@ -210,14 +215,12 @@
         </div>
       </div>
 
-      <!-- Layar Tinjau Jawaban -->
+      <!-- Review Screen -->
       <div id="review-screen" class="screen">
         <h1 class="text-center mb-4">Tinjau Jawaban Anda</h1>
         <div class="card">
           <div class="card-body">
-            <div class="question-list" id="question-list">
-              <!-- Daftar soal akan diisi oleh JavaScript -->
-            </div>
+            <div class="question-list" id="question-list"></div>
             
             <div class="d-flex justify-content-between mt-4">
               <button id="back-to-quiz-btn" class="btn btn-secondary">Kembali ke Quiz</button>
@@ -227,21 +230,19 @@
         </div>
       </div>
 
-      <!-- Layar Hasil -->
+      <!-- Result Screen -->
       <div id="result-screen" class="screen">
         <h1 class="text-center mb-4">Hasil Quiz Anda</h1>
         <div class="card">
           <div class="card-body text-center">
-            <div class="final-score" id="final-score">85</div>
-            <p class="lead">Benar: <span id="correct-answers">8</span> dari <span id="total-questions">10</span> soal</p>
+            <div class="final-score" id="final-score">0</div>
+            <p class="lead">Benar: <span id="correct-answers">0</span> dari <span id="total-questions">0</span> soal</p>
             
             <div id="score-message" class="alert alert-info mt-3"></div>
             
             <div class="mt-4">
               <h5>Detail Jawaban:</h5>
-              <div class="detailed-results mt-3" id="detailed-results">
-                <!-- Detail akan diisi oleh JavaScript -->
-              </div>
+              <div class="detailed-results mt-3" id="detailed-results"></div>
             </div>
             
             <button id="finish-btn" class="btn btn-primary mt-4">Selesai</button>
@@ -253,10 +254,10 @@
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
-    // Konfigurasi Web App
-    const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyiPiyoORjrNHojLggdQi_7yp2PMM-iWytzO6QGRCZDOmIAtsBeTSZOoyg2oZPuzeW65w/exec';
+    // Web App Configuration
+    const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbynSJagyLUV5PBgiOmyI_tqB87IPJfA5AtYN-k1JGrqNJ6PEySJnJEgqLZPok5Dnur5tA/exec';
     
-    // Variabel global
+    // Global variables
     let currentQuestions = [];
     let studentAnswers = {};
     let currentQuestionIndex = 0;
@@ -264,8 +265,8 @@
     let timerInterval = null;
     let classInfo = null;
     let studentName = '';
-    let questionOrder = []; // Untuk menyimpan urutan soal yang sudah diacak
-    let optionOrders = {}; // Untuk menyimpan urutan pilihan jawaban yang sudah diacak per soal
+    let questionOrder = [];
+    let optionOrders = {};
 
     // Initialize PWA
     if ('serviceWorker' in navigator) {
@@ -280,44 +281,30 @@
       });
     }
 
-    // Fungsi utama saat dokumen siap
     document.addEventListener('DOMContentLoaded', function() {
       setupEventListeners();
     });
 
-    // Setup semua event listeners
     function setupEventListeners() {
-      // Form login
       document.getElementById('login-form').addEventListener('submit', function(e) {
         e.preventDefault();
         startQuiz();
       });
       
-      // Tombol pilihan jawaban
       document.addEventListener('click', function(e) {
         if (e.target.classList.contains('option-btn')) {
           selectAnswer(e.target);
         }
       });
       
-      // Tombol navigasi
       document.getElementById('prev-btn').addEventListener('click', goToPreviousQuestion);
       document.getElementById('next-btn').addEventListener('click', goToNextQuestion);
-      
-      // Tombol tinjau jawaban
       document.getElementById('review-btn').addEventListener('click', showReviewScreen);
-      
-      // Tombol kembali ke quiz
       document.getElementById('back-to-quiz-btn').addEventListener('click', backToQuiz);
-      
-      // Tombol submit quiz
       document.getElementById('submit-quiz-btn').addEventListener('click', confirmSubmit);
-      
-      // Tombol selesai
       document.getElementById('finish-btn').addEventListener('click', finishQuiz);
     }
 
-    // Fungsi untuk memulai quiz
     async function startQuiz() {
       studentName = document.getElementById('student-name').value.trim();
       const classCode = document.getElementById('class-code').value.trim();
@@ -335,7 +322,6 @@
       try {
         showLoading(true);
         
-        // Periksa kode kelas
         const checkResponse = await fetch(`${WEB_APP_URL}?action=checkClassCode&classCode=${classCode}`);
         const checkData = await checkResponse.json();
         
@@ -345,7 +331,6 @@
           return;
         }
         
-        // Simpan info kelas
         classInfo = {
           KodeKelas: classCode,
           Kategori: checkData.categories,
@@ -354,17 +339,13 @@
         
         quizEndTime = new Date(checkData.endTime);
         
-        // Ambil pertanyaan
         const questionsResponse = await fetch(`${WEB_APP_URL}?action=getQuestions&categories=${encodeURIComponent(checkData.categories)}`);
         const questionsData = await questionsResponse.json();
         
         if (questionsData.status === 'success') {
           currentQuestions = questionsData.data;
-          
-          // Acak urutan soal
           questionOrder = shuffleArray([...Array(currentQuestions.length).keys()]);
           
-          // Acak urutan pilihan jawaban untuk setiap soal
           currentQuestions.forEach((_, index) => {
             optionOrders[index] = shuffleArray(['A', 'B', 'C', 'D'].filter(opt => currentQuestions[index][`Pilihan${opt}`]));
           });
@@ -381,7 +362,6 @@
       }
     }
 
-    // Fungsi untuk mengacak array (Fisher-Yates algorithm)
     function shuffleArray(array) {
       const newArray = [...array];
       for (let i = newArray.length - 1; i > 0; i--) {
@@ -391,7 +371,6 @@
       return newArray;
     }
 
-    // Tampilkan/sembunyikan loading spinner
     function showLoading(show) {
       const loadingElement = document.getElementById('loading-overlay');
       if (show) {
@@ -401,34 +380,23 @@
       }
     }
 
-    // Tampilkan error login
     function showLoginError(message) {
       const errorElement = document.getElementById('login-error');
       errorElement.textContent = message;
       errorElement.classList.remove('d-none');
     }
 
-    // Inisialisasi quiz setelah login berhasil
     function initializeQuiz() {
-      // Inisialisasi jawaban
       studentAnswers = {};
       currentQuestionIndex = 0;
-      
-      // Setup progress indicator
       setupProgressIndicator();
-      
-      // Mulai timer
       startTimer();
-      
-      // Tampilkan pertanyaan pertama
       showQuestion(currentQuestionIndex);
       
-      // Ganti ke layar quiz
       document.getElementById('login-screen').classList.remove('active');
       document.getElementById('quiz-screen').classList.add('active');
     }
 
-    // Setup progress indicator
     function setupProgressIndicator() {
       const container = document.getElementById('progress-indicator');
       container.innerHTML = '';
@@ -438,14 +406,12 @@
         dot.className = 'progress-dot';
         dot.textContent = index + 1;
         dot.addEventListener('click', () => goToQuestion(index));
-        
         container.appendChild(dot);
       });
       
       updateProgressIndicator();
     }
 
-    // Update progress indicator
     function updateProgressIndicator() {
       const dots = document.querySelectorAll('.progress-dot');
       
@@ -462,13 +428,11 @@
       });
     }
 
-    // Mulai timer
     function startTimer() {
       updateTimerDisplay();
       timerInterval = setInterval(updateTimerDisplay, 1000);
     }
 
-    // Update tampilan timer
     function updateTimerDisplay() {
       const now = new Date();
       const timeLeft = Math.max(0, quizEndTime - now);
@@ -487,23 +451,52 @@
         `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
     }
 
-    // Tampilkan pertanyaan
     function showQuestion(index) {
-      if (index < 0 || index >= currentQuestions.length) return;
+  if (index < 0 || index >= currentQuestions.length) return;
+  
+  currentQuestionIndex = index;
+  const originalIndex = questionOrder[index];
+  const question = currentQuestions[originalIndex];
+  
+  if (!question) {
+    console.error('Question data not found for index:', index);
+    return;
+  }
+  
+  document.getElementById('question-category').textContent = `Kategori: ${question.Kategori}`;
+  document.getElementById('question-text').textContent = question.Pertanyaan;
+  
+  // Handle gambar soal
+  const imgContainer = document.getElementById('question-image-container');
+  const imgElement = document.getElementById('question-image');
+  
+  // Periksa apakah ada gambar soal (dengan pengecekan yang lebih aman)
+  if (question.GambarSoal && typeof question.GambarSoal === 'string') {
+    try {
+      // Cek jika ini data URL atau URL biasa
+      if (question.GambarSoal.startsWith('data:image') || 
+          question.GambarSoal.startsWith('http')) {
+        imgElement.src = question.GambarSoal;
+        imgContainer.style.display = 'block';
+        
+        imgElement.onerror = function() {
+          console.error('Gagal memuat gambar:', question.GambarSoal);
+          imgContainer.style.display = 'none';
+        };
+      } else {
+        imgContainer.style.display = 'none';
+      }
+    } catch (e) {
+      console.error('Error processing image:', e);
+      imgContainer.style.display = 'none';
+    }
+  } else {
+    imgContainer.style.display = 'none';
+  }
       
-      currentQuestionIndex = index;
-      const originalIndex = questionOrder[index];
-      const question = currentQuestions[originalIndex];
-      
-      // Update tampilan
-      document.getElementById('question-category').textContent = `Kategori: ${question.Kategori}`;
-      document.getElementById('question-text').textContent = question.Pertanyaan;
-      
-      // Update opsi jawaban
       const optionsContainer = document.getElementById('options-container');
       optionsContainer.innerHTML = '';
       
-      // Gunakan urutan pilihan yang sudah diacak
       const currentOptionOrder = optionOrders[originalIndex];
       
       currentOptionOrder.forEach(option => {
@@ -511,9 +504,9 @@
           const btn = document.createElement('button');
           btn.className = 'option-btn';
           btn.setAttribute('data-option', option);
-          btn.textContent = `${option}. ${question[`Pilihan${option}`]}`;
+          // Menampilkan hanya teks jawaban tanpa huruf opsi
+          btn.textContent = question[`Pilihan${option}`];
           
-          // Tandai jika sudah dipilih sebelumnya
           if (studentAnswers[index] === option) {
             btn.classList.add('selected');
           }
@@ -522,42 +515,31 @@
         }
       });
       
-      // Update tombol navigasi
       document.getElementById('prev-btn').disabled = index === 0;
       document.getElementById('next-btn').textContent = 
         index === currentQuestions.length - 1 ? 'Selesai' : 'Selanjutnya';
       
-      // Update progress indicator
       updateProgressIndicator();
     }
 
-    // Pilih jawaban
     function selectAnswer(button) {
       const selectedOption = button.getAttribute('data-option');
       
-      // Hapus seleksi dari opsi lain
       document.querySelectorAll('.option-btn').forEach(btn => {
         btn.classList.remove('selected');
       });
       
-      // Tandai opsi yang dipilih
       button.classList.add('selected');
-      
-      // Simpan jawaban
       studentAnswers[currentQuestionIndex] = selectedOption;
-      
-      // Update progress indicator
       updateProgressIndicator();
     }
 
-    // Pergi ke pertanyaan sebelumnya
     function goToPreviousQuestion() {
       if (currentQuestionIndex > 0) {
         showQuestion(currentQuestionIndex - 1);
       }
     }
 
-    // Pergi ke pertanyaan berikutnya
     function goToNextQuestion() {
       if (currentQuestionIndex < currentQuestions.length - 1) {
         showQuestion(currentQuestionIndex + 1);
@@ -566,14 +548,11 @@
       }
     }
 
-    // Pergi ke pertanyaan tertentu
     function goToQuestion(index) {
       showQuestion(index);
     }
 
-    // Tampilkan layar tinjau jawaban
     function showReviewScreen() {
-      // Update daftar pertanyaan
       const questionList = document.getElementById('question-list');
       questionList.innerHTML = '';
       
@@ -589,7 +568,7 @@
             </div>
             <div>
               ${studentAnswers[index] !== undefined ? 
-                `<span class="badge bg-primary">${studentAnswers[index]}</span>` : 
+                `<span class="badge bg-primary">${getOptionText(question, studentAnswers[index])}</span>` : 
                 '<span class="badge bg-secondary">Belum dijawab</span>'}
             </div>
           </div>
@@ -603,35 +582,34 @@
         questionList.appendChild(item);
       });
       
-      // Ganti ke layar tinjau
       document.getElementById('quiz-screen').classList.remove('active');
       document.getElementById('review-screen').classList.add('active');
     }
 
-    // Kembali ke layar quiz
-   
     function backToQuiz() {
       document.getElementById('review-screen').classList.remove('active');
       document.getElementById('quiz-screen').classList.add('active');
     }
 
-    // Konfirmasi submit
     function confirmSubmit() {
       if (confirm('Apakah Anda yakin ingin mengirim jawaban? Anda tidak bisa mengubah jawaban setelah submit.')) {
         submitQuiz();
       }
     }
 
-    // Submit quiz
     async function submitQuiz() {
       clearInterval(timerInterval);
       
       try {
-        // Format jawaban: "A,B,C,D" untuk semua pertanyaan
+        // Format answers berdasarkan urutan asli soal
         let answers = [];
-        currentQuestions.forEach((_, index) => {
-          answers.push(studentAnswers[index] || '-');
-        });
+        for (let i = 0; i < currentQuestions.length; i++) {
+          const originalIndex = questionOrder[i];
+          answers[originalIndex] = studentAnswers[i] || '-';
+        }
+        
+        // Pastikan array answers lengkap
+        answers = answers.map(answer => answer || '-');
         
         const response = await fetch(`${WEB_APP_URL}?action=submitAnswers`, {
           method: 'POST',
@@ -654,33 +632,35 @@
       }
     }
 
-    // Tampilkan hasil (tanpa kunci jawaban)
     function showResults(resultData) {
       document.getElementById('final-score').textContent = resultData.score;
       document.getElementById('correct-answers').textContent = resultData.correctAnswers;
       document.getElementById('total-questions').textContent = resultData.totalQuestions;
       
-      // Tampilkan pesan motivasi
       const scoreMessage = document.getElementById('score-message');
       scoreMessage.className = 'alert ' + (resultData.score > 70 ? 'alert-success' : 'alert-warning');
       scoreMessage.textContent = resultData.score > 70 ? 
         'Kerja bagus! Anda telah lulus.' : 
         'Anda belum mencapai passing grade. Silakan coba lagi!';
       
-      // Tampilkan detail jawaban
       const detailsContainer = document.getElementById('detailed-results');
       detailsContainer.innerHTML = '';
       
-      currentQuestions.forEach((question, index) => {
+      currentQuestions.forEach((_, index) => {
+        const originalIndex = questionOrder[index];
+        const q = currentQuestions[originalIndex];
         const studentAnswer = studentAnswers[index] || '-';
-        const isCorrect = studentAnswer === question.KunciJawaban;
+        
+        // Perbaikan pengecekan jawaban
+        const isCorrect = studentAnswer === q.KunciJawaban;
         
         const item = document.createElement('div');
         item.className = `result-item ${isCorrect ? 'correct' : 'incorrect'}`;
         item.innerHTML = `
           <h5>Soal ${index + 1}</h5>
-          <p><strong>Pertanyaan:</strong> ${question.Pertanyaan}</p>
-          <p><strong>Jawaban Anda:</strong> ${studentAnswer} - ${getOptionText(question, studentAnswer)}</p>
+          <p><strong>Pertanyaan:</strong> ${q.Pertanyaan}</p>
+          <p><strong>Jawaban Anda:</strong> ${getOptionText(q, studentAnswer)}</p>
+          <p><strong>Jawaban Benar:</strong> ${getOptionText(q, q.KunciJawaban)}</p>
           <p class="result-status ${isCorrect ? 'correct' : 'incorrect'}">
             ${isCorrect ? '✅ Jawaban Anda Benar' : '❌ Jawaban Anda Salah'}
           </p>
@@ -689,35 +669,24 @@
         detailsContainer.appendChild(item);
       });
       
-      // Ganti ke layar hasil
       document.getElementById('review-screen').classList.remove('active');
       document.getElementById('result-screen').classList.add('active');
     }
 
-    // Mendapatkan teks opsi
     function getOptionText(question, optionKey) {
       if (!question) return 'Tidak ada data soal';
+      if (optionKey === '-') return 'Tidak menjawab';
       
-      switch(optionKey) {
-        case 'A': return question.PilihanA || 'Tidak ada pilihan';
-        case 'B': return question.PilihanB || 'Tidak ada pilihan';
-        case 'C': return question.PilihanC || 'Tidak ada pilihan';
-        case 'D': return question.PilihanD || 'Tidak ada pilihan';
-        default: return 'Tidak menjawab';
-      }
+      return question[`Pilihan${optionKey}`] || 'Tidak ada pilihan';
     }
 
-    // Selesai quiz
     function finishQuiz() {
-      // Kembali ke layar login
       document.getElementById('result-screen').classList.remove('active');
       document.getElementById('login-screen').classList.add('active');
       
-      // Reset form
       document.getElementById('login-form').reset();
       document.getElementById('login-error').classList.add('d-none');
       
-      // Reset variabel
       currentQuestions = [];
       studentAnswers = {};
       currentQuestionIndex = 0;
