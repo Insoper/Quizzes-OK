@@ -4,12 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Quiz Interaktif - Siswa</title>
-  <link rel="manifest" href="manifest-siswa.json">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
     body {
       background-color: #f8f9fa;
       padding-top: 20px;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
     .quiz-container {
       max-width: 800px;
@@ -44,29 +44,6 @@
       color: white;
       border-color: #0d6efd;
     }
-    .progress-indicator {
-      display: flex;
-      gap: 5px;
-      margin-bottom: 20px;
-      flex-wrap: wrap;
-    }
-    .progress-dot {
-      width: 30px;
-      height: 30px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background-color: #e9ecef;
-      cursor: pointer;
-    }
-    .progress-dot.answered {
-      background-color: #0d6efd;
-      color: white;
-    }
-    .progress-dot.current {
-      border: 2px solid #0d6efd;
-    }
     .timer {
       font-size: 1.2rem;
       font-weight: bold;
@@ -76,57 +53,12 @@
       border-radius: 20px;
       display: inline-block;
     }
-    .result-item {
-      margin-bottom: 15px;
-      padding: 15px;
-      border-radius: 8px;
-      background-color: #f8f9fa;
-    }
-    .result-item.correct {
-      border-left: 4px solid #198754;
-      background-color: #f1f9f1;
-    }
-    .result-item.incorrect {
-      border-left: 4px solid #dc3545;
-      background-color: #fdf3f3;
-    }
-    .result-status {
-      font-weight: bold;
-      margin-top: 8px;
-    }
-    .result-status.correct {
-      color: #198754;
-    }
-    .result-status.incorrect {
-      color: #dc3545;
-    }
-    .screen {
-      display: none;
-    }
-    .screen.active {
-      display: block;
-    }
-    #result-screen {
-      text-align: center;
-    }
-    .final-score {
-      font-size: 3rem;
-      font-weight: bold;
-      color: #0d6efd;
-      margin: 20px 0;
-    }
-    #question-image-container {
-      margin: 15px 0;
-      display: none;
-      text-align: center;
-      opacity: 0;
-      transition: opacity 0.5s ease;
-    }
     #question-image {
       max-width: 100%;
       max-height: 300px;
       border-radius: 8px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      margin: 15px 0;
+      display: none;
     }
     .loading-overlay {
       position: fixed;
@@ -152,32 +84,84 @@
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
     }
-    @media all and (display-mode: standalone) {
-      body {
-        padding-top: 0;
-      }
-      .quiz-container {
-        border-radius: 0;
-        min-height: 100vh;
-      }
-    }
-    .image-loading {
-      background-color: #f1f1f1;
-      min-height: 150px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 8px;
-    }
     .option-image {
       max-width: 100%;
       max-height: 100px;
       display: block;
       margin: 5px auto;
-      border-radius: 4px;
     }
-    .fade-in {
-      opacity: 1 !important;
+    .progress-indicator {
+      display: flex;
+      gap: 5px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .progress-dot {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: #e9ecef;
+      cursor: pointer;
+    }
+    .progress-dot.answered {
+      background-color: #0d6efd;
+      color: white;
+    }
+    .progress-dot.current {
+      border: 2px solid #0d6efd;
+    }
+    .screen {
+      display: none;
+    }
+    .screen.active {
+      display: block;
+    }
+    .final-score {
+      font-size: 3rem;
+      font-weight: bold;
+      color: #0d6efd;
+      margin: 20px 0;
+    }
+    .result-item {
+      padding: 15px;
+      margin-bottom: 15px;
+      border-radius: 8px;
+      background-color: #f8f9fa;
+    }
+    .result-item.correct {
+      border-left: 5px solid #28a745;
+    }
+    .result-item.incorrect {
+      border-left: 5px solid #dc3545;
+    }
+    .result-status {
+      font-weight: bold;
+      margin-top: 10px;
+    }
+    .result-status.correct {
+      color: #28a745;
+    }
+    .result-status.incorrect {
+      color: #dc3545;
+    }
+    .review-item {
+      padding: 10px;
+      margin-bottom: 10px;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    .review-item:hover {
+      background-color: #e9ecef;
+    }
+    .review-item.answered {
+      background-color: #e7f1ff;
+    }
+    .review-item.unanswered {
+      background-color: #f8f9fa;
     }
   </style>
 </head>
@@ -188,7 +172,7 @@
 
   <div class="container">
     <div class="quiz-container">
-      <!-- Login Screen -->
+      <!-- 1. Login Screen -->
       <div id="login-screen" class="screen active">
         <h1 class="text-center mb-4">Masuk Quiz</h1>
         <div class="card">
@@ -209,25 +193,19 @@
         <div id="login-error" class="alert alert-danger mt-3 d-none"></div>
       </div>
 
-      <!-- Quiz Screen -->
+      <!-- 2. Quiz Screen -->
       <div id="quiz-screen" class="screen">
         <div class="d-flex justify-content-between align-items-center mb-4">
-          <div class="timer" id="timer">01:00:00</div>
+          <div class="timer" id="timer">00:00:00</div>
           <button id="review-btn" class="btn btn-outline-primary">Tinjau Jawaban</button>
         </div>
         
         <div class="progress-indicator" id="progress-indicator"></div>
         
         <div class="question-container">
-          <h5 id="question-category" class="text-muted mb-3">Kategori: </h5>
+          <h5 id="question-category" class="text-muted mb-3"></h5>
           <h4 id="question-text">Memuat pertanyaan...</h4>
-          
-          <div id="question-image-container">
-            <div class="image-loading d-none" id="image-loading">
-              <div class="spinner spinner-sm"></div>
-            </div>
-            <img id="question-image" src="" alt="Gambar soal" class="img-fluid rounded d-none">
-          </div>
+          <img id="question-image" src="" alt="Gambar soal">
           
           <div class="options mt-4" id="options-container"></div>
         </div>
@@ -238,11 +216,25 @@
         </div>
       </div>
 
-      <!-- Review Screen -->
+      <!-- 3. Review Screen -->
       <div id="review-screen" class="screen">
         <h1 class="text-center mb-4">Tinjau Jawaban Anda</h1>
         <div class="card">
           <div class="card-body">
+            <div class="mb-3">
+              <p>Periksa kembali jawaban Anda sebelum submit:</p>
+              <div class="d-flex gap-2 mb-3">
+                <div class="d-flex align-items-center">
+                  <div class="me-2" style="width: 20px; height: 20px; background-color: #0d6efd; border-radius: 50%;"></div>
+                  <small>Sudah dijawab</small>
+                </div>
+                <div class="d-flex align-items-center">
+                  <div class="me-2" style="width: 20px; height: 20px; background-color: #e9ecef; border-radius: 50%;"></div>
+                  <small>Belum dijawab</small>
+                </div>
+              </div>
+            </div>
+            
             <div class="question-list" id="question-list"></div>
             
             <div class="d-flex justify-content-between mt-4">
@@ -253,7 +245,7 @@
         </div>
       </div>
 
-      <!-- Result Screen -->
+      <!-- 4. Result Screen -->
       <div id="result-screen" class="screen">
         <h1 class="text-center mb-4">Hasil Quiz Anda</h1>
         <div class="card">
@@ -264,7 +256,7 @@
             <div id="score-message" class="alert alert-info mt-3"></div>
             
             <div class="mt-4">
-              <h5>Detail Jawaban:</h5>
+              <h5>Status Jawaban:</h5>
               <div class="detailed-results mt-3" id="detailed-results"></div>
             </div>
             
@@ -277,7 +269,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
-    // Web App Configuration
+    // Web App Configuration - Ganti dengan URL Web App Anda
     const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxYZq7VCNTpDT86akyekxKTAng5KdESmW77kbfW-40edkOfVd1DIKv6PGGZ3Fnb5FccAw/exec';
     
     // Global variables
@@ -291,19 +283,7 @@
     let questionOrder = [];
     let optionOrders = {};
 
-    // Initialize PWA
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js')
-          .then(registration => {
-            console.log('ServiceWorker registered');
-          })
-          .catch(err => {
-            console.log('ServiceWorker registration failed: ', err);
-          });
-      });
-    }
-
+    // Initialize
     document.addEventListener('DOMContentLoaded', function() {
       setupEventListeners();
     });
@@ -314,41 +294,12 @@
         startQuiz();
       });
       
-      document.addEventListener('click', function(e) {
-        if (e.target.classList.contains('option-btn')) {
-          selectAnswer(e.target);
-        }
-      });
-      
       document.getElementById('prev-btn').addEventListener('click', goToPreviousQuestion);
       document.getElementById('next-btn').addEventListener('click', goToNextQuestion);
       document.getElementById('review-btn').addEventListener('click', showReviewScreen);
       document.getElementById('back-to-quiz-btn').addEventListener('click', backToQuiz);
       document.getElementById('submit-quiz-btn').addEventListener('click', confirmSubmit);
       document.getElementById('finish-btn').addEventListener('click', finishQuiz);
-    }
-
-    function convertGoogleDriveUrl(url) {
-      if (!url) return null;
-      const cleanUrl = url.trim();
-      if (!cleanUrl.includes('drive.google.com')) return cleanUrl;
-
-      const fileIdMatch = cleanUrl.match(/\/d\/([^\/]+)/) || 
-                        cleanUrl.match(/id=([^\/&]+)/) || 
-                        cleanUrl.match(/([^\/]{25,})/);
-
-      return fileIdMatch && fileIdMatch[1] 
-        ? `https://drive.google.com/uc?export=view&id=${fileIdMatch[1]}`
-        : null;
-    }
-
-    function isImageUrl(text) {
-      if (!text) return false;
-      const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
-      const urlPattern = /https?:\/\/[^\s]+/i;
-      
-      if (!urlPattern.test(text)) return false;
-      return imageExtensions.some(ext => text.toLowerCase().includes(ext));
     }
 
     async function startQuiz() {
@@ -368,6 +319,7 @@
       try {
         showLoading(true);
         
+        // Step 1: Check class code
         const checkResponse = await fetch(`${WEB_APP_URL}?action=checkClassCode&classCode=${classCode}`);
         const checkData = await checkResponse.json();
         
@@ -383,17 +335,18 @@
           WaktuBerakhir: checkData.endTime
         };
         
-        quizEndTime = new Date(checkData.endTime);
-        
+        // Step 2: Get questions
         const questionsResponse = await fetch(`${WEB_APP_URL}?action=getQuestions&categories=${encodeURIComponent(checkData.categories)}`);
         const questionsData = await questionsResponse.json();
         
         if (questionsData.status === 'success') {
           currentQuestions = questionsData.data;
-          questionOrder = shuffleArray([...Array(currentQuestions.length).keys()]);
+          quizEndTime = new Date(checkData.endTime);
           
+          // Initialize quiz order
+          questionOrder = Array.from({length: currentQuestions.length}, (_, i) => i);
           currentQuestions.forEach((_, index) => {
-            optionOrders[index] = shuffleArray(['A', 'B', 'C', 'D'].filter(opt => currentQuestions[index][`Pilihan${opt}`]));
+            optionOrders[index] = ['A', 'B', 'C', 'D'].filter(opt => currentQuestions[index][`Pilihan${opt}`]);
           });
           
           initializeQuiz();
@@ -408,30 +361,6 @@
       }
     }
 
-    function shuffleArray(array) {
-      const newArray = [...array];
-      for (let i = newArray.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
-      }
-      return newArray;
-    }
-
-    function showLoading(show) {
-      const loadingElement = document.getElementById('loading-overlay');
-      if (show) {
-        loadingElement.classList.remove('d-none');
-      } else {
-        loadingElement.classList.add('d-none');
-      }
-    }
-
-    function showLoginError(message) {
-      const errorElement = document.getElementById('login-error');
-      errorElement.textContent = message;
-      errorElement.classList.remove('d-none');
-    }
-
     function initializeQuiz() {
       studentAnswers = {};
       currentQuestionIndex = 0;
@@ -439,6 +368,7 @@
       startTimer();
       showQuestion(currentQuestionIndex);
       
+      // Switch to quiz screen
       document.getElementById('login-screen').classList.remove('active');
       document.getElementById('quiz-screen').classList.add('active');
     }
@@ -460,17 +390,10 @@
 
     function updateProgressIndicator() {
       const dots = document.querySelectorAll('.progress-dot');
-      
       dots.forEach((dot, index) => {
         dot.classList.remove('answered', 'current');
-        
-        if (studentAnswers[index] !== undefined) {
-          dot.classList.add('answered');
-        }
-        
-        if (index === currentQuestionIndex) {
-          dot.classList.add('current');
-        }
+        if (studentAnswers[index] !== undefined) dot.classList.add('answered');
+        if (index === currentQuestionIndex) dot.classList.add('current');
       });
     }
 
@@ -498,134 +421,80 @@
     }
 
     function showQuestion(index) {
-  if (index < 0 || index >= currentQuestions.length) return;
-  
-  currentQuestionIndex = index;
-  const originalIndex = questionOrder[index];
-  const question = currentQuestions[originalIndex];
-  
-  if (!question) {
-    console.error('Question data not found for index:', index);
-    return;
-  }
-  
-  // Tampilkan pertanyaan
-  document.getElementById('question-category').textContent = `Kategori: ${question.Kategori}`;
-  document.getElementById('question-text').textContent = question.Pertanyaan;
-  
-  // Handle gambar soal
-  const imgContainer = document.getElementById('question-image-container');
-  const imgElement = document.getElementById('question-image');
-  const imgLoading = document.getElementById('image-loading');
-
-  // Reset state
-  imgElement.classList.add('d-none');
-  imgLoading.classList.add('d-none');
-  imgContainer.style.display = 'none';
-
-  // Jika ada gambar
-  if (question.GambarSoal) {
-    console.log('Loading image:', question.GambarSoal); // Debug log
-    
-    imgContainer.style.display = 'block';
-    imgLoading.classList.remove('d-none');
-    
-    imgElement.onload = function() {
-      console.log('Image loaded successfully'); // Debug log
-      imgLoading.classList.add('d-none');
-      imgElement.classList.remove('d-none');
-    };
-    
-    imgElement.onerror = function() {
-      console.error('Failed to load image:', question.GambarSoal); // Debug log
-      imgLoading.classList.add('d-none');
-      imgElement.alt = 'Gambar tidak dapat dimuat';
-      imgElement.classList.remove('d-none');
-    };
-    
-    // Gunakan URL langsung atau tambahkan cache buster
-    imgElement.src = question.GambarSoal + '?t=' + new Date().getTime();
-  } else {
-    imgContainer.style.display = 'none';
-  }
-  
-  // Tampilkan opsi jawaban
-  const optionsContainer = document.getElementById('options-container');
-  optionsContainer.innerHTML = '';
-  
-  const currentOptionOrder = optionOrders[originalIndex];
-  
-  currentOptionOrder.forEach(option => {
-    if (question[`Pilihan${option}`]) {
-      const btn = document.createElement('button');
-      btn.className = 'option-btn';
-      btn.setAttribute('data-option', option);
+      if (index < 0 || index >= currentQuestions.length) return;
       
-      const optionText = question[`Pilihan${option}`];
+      currentQuestionIndex = index;
+      const question = currentQuestions[index];
       
-      // Cek jika opsi berupa gambar
-      if (optionText && typeof optionText === 'string' && 
-          /\.(jpg|jpeg|png|gif|webp|svg)(\?.*)?$/i.test(optionText)) {
-        const img = document.createElement('img');
-        img.src = convertGoogleDriveUrl(optionText) || optionText;
-        img.className = 'option-image';
-        img.onerror = function() {
-          console.error('Failed to load option image:', optionText);
-          btn.textContent = '[Gambar tidak tersedia]';
+      document.getElementById('question-category').textContent = `Kategori: ${question.Kategori}`;
+      document.getElementById('question-text').textContent = question.Pertanyaan;
+      
+      // Handle image
+      const imgElement = document.getElementById('question-image');
+      imgElement.style.display = 'none';
+      
+      if (question.GambarSoal) {
+        imgElement.onload = function() {
+          imgElement.style.display = 'block';
         };
-        btn.appendChild(img);
-      } else {
-        btn.textContent = optionText;
+        imgElement.onerror = function() {
+          imgElement.style.display = 'none';
+        };
+        imgElement.src = question.GambarSoal + '?t=' + new Date().getTime(); // Cache buster
       }
       
-      if (studentAnswers[index] === option) {
-        btn.classList.add('selected');
-      }
+      // Show options
+      const optionsContainer = document.getElementById('options-container');
+      optionsContainer.innerHTML = '';
       
-      optionsContainer.appendChild(btn);
-    }
-  });
-  
-  // Update navigasi
-  document.getElementById('prev-btn').disabled = index === 0;
-  document.getElementById('next-btn').textContent = 
-    index === currentQuestions.length - 1 ? 'Selesai' : 'Selanjutnya';
-  
-  updateProgressIndicator();
-}
-
-    function convertGoogleDriveUrl(url) {
-  if (!url) return null;
-  
-  // Jika sudah format uc?export=view, langsung return
-  if (url.includes('uc?export=view')) return url;
-  
-  const patterns = [
-    /\/d\/([^\/]+)/,
-    /id=([^&]+)/,
-    /([a-zA-Z0-9-_]{33,})/
-  ];
-  
-  for (const pattern of patterns) {
-    const match = url.match(pattern);
-    if (match && match[1]) {
-      return `https://drive.google.com/uc?export=view&id=${match[1]}`;
-    }
-  }
-  
-  return null;
-}
-
-    function selectAnswer(button) {
-      const selectedOption = button.getAttribute('data-option');
-      
-      document.querySelectorAll('.option-btn').forEach(btn => {
-        btn.classList.remove('selected');
+      optionOrders[index].forEach(option => {
+        const optionText = question[`Pilihan${option}`];
+        if (!optionText) return;
+        
+        const btn = document.createElement('button');
+        btn.className = 'option-btn';
+        btn.setAttribute('data-option', option);
+        
+        if (isImageUrl(optionText)) {
+          const img = document.createElement('img');
+          img.src = optionText;
+          img.className = 'option-image';
+          img.onerror = function() {
+            btn.textContent = '[Gambar tidak tersedia]';
+          };
+          btn.appendChild(img);
+        } else {
+          btn.textContent = optionText;
+        }
+        
+        if (studentAnswers[index] === option) {
+          btn.classList.add('selected');
+        }
+        
+        btn.addEventListener('click', function() {
+          document.querySelectorAll('.option-btn').forEach(btn => {
+            btn.classList.remove('selected');
+          });
+          this.classList.add('selected');
+          studentAnswers[index] = option;
+          updateProgressIndicator();
+        });
+        
+        optionsContainer.appendChild(btn);
       });
       
-      button.classList.add('selected');
-      studentAnswers[currentQuestionIndex] = selectedOption;
+      // Update navigation
+      document.getElementById('prev-btn').disabled = index === 0;
+      document.getElementById('next-btn').textContent = 
+        index === currentQuestions.length - 1 ? 'Selesai' : 'Selanjutnya';
+      
       updateProgressIndicator();
+    }
+
+    function isImageUrl(text) {
+      if (!text) return false;
+      return /\.(jpg|jpeg|png|gif|webp|svg)(\?.*)?$/i.test(text) && 
+             /^https?:\/\//i.test(text);
     }
 
     function goToPreviousQuestion() {
@@ -650,21 +519,13 @@
       const questionList = document.getElementById('question-list');
       questionList.innerHTML = '';
       
-      currentQuestions.forEach((_, index) => {
-        const originalIndex = questionOrder[index];
-        const question = currentQuestions[originalIndex];
+      currentQuestions.forEach((question, index) => {
         const item = document.createElement('div');
-        item.className = `question-item ${studentAnswers[index] !== undefined ? 'answered' : 'unanswered'}`;
+        item.className = `review-item ${studentAnswers[index] !== undefined ? 'answered' : 'unanswered'}`;
         item.innerHTML = `
           <div class="d-flex justify-content-between align-items-center">
-            <div>
-              <strong>Soal ${index + 1}:</strong> ${question.Pertanyaan}
-            </div>
-            <div>
-              ${studentAnswers[index] !== undefined ? 
-                `<span class="badge bg-primary">${getOptionText(question, studentAnswers[index])}</span>` : 
-                '<span class="badge bg-secondary">Belum dijawab</span>'}
-            </div>
+            <strong>Soal ${index + 1}</strong>
+            <span>${studentAnswers[index] !== undefined ? 'Sudah dijawab' : 'Belum dijawab'}</span>
           </div>
         `;
         
@@ -676,6 +537,7 @@
         questionList.appendChild(item);
       });
       
+      // Switch to review screen
       document.getElementById('quiz-screen').classList.remove('active');
       document.getElementById('review-screen').classList.add('active');
     }
@@ -693,17 +555,11 @@
 
     async function submitQuiz() {
       clearInterval(timerInterval);
+      showLoading(true);
       
       try {
-        // Format answers berdasarkan urutan asli soal
-        let answers = [];
-        for (let i = 0; i < currentQuestions.length; i++) {
-          const originalIndex = questionOrder[i];
-          answers[originalIndex] = studentAnswers[i] || '-';
-        }
-        
-        // Pastikan array answers lengkap
-        answers = answers.map(answer => answer || '-');
+        // Format answers
+        const answers = currentQuestions.map((_, index) => studentAnswers[index] || '-');
         
         const response = await fetch(`${WEB_APP_URL}?action=submitAnswers`, {
           method: 'POST',
@@ -713,16 +569,18 @@
           body: `studentName=${encodeURIComponent(studentName)}&classCode=${encodeURIComponent(classInfo.KodeKelas)}&answers=${encodeURIComponent(answers.join(','))}`
         });
         
-        const data = await response.json();
+        const resultData = await response.json();
         
-        if (data.status === 'success') {
-          showResults(data);
+        if (resultData.status === 'success') {
+          showResults(resultData);
         } else {
-          throw new Error(data.message || 'Gagal mengirim jawaban');
+          throw new Error(resultData.message || 'Gagal mengirim jawaban');
         }
       } catch (error) {
         console.error('Error:', error);
         alert('Terjadi kesalahan saat mengirim jawaban: ' + error.message);
+      } finally {
+        showLoading(false);
       }
     }
 
@@ -737,24 +595,17 @@
         'Kerja bagus! Anda telah lulus.' : 
         'Anda belum mencapai passing grade. Silakan coba lagi!';
       
+      // Show simplified results without answers
       const detailsContainer = document.getElementById('detailed-results');
       detailsContainer.innerHTML = '';
       
-      currentQuestions.forEach((_, index) => {
-        const originalIndex = questionOrder[index];
-        const q = currentQuestions[originalIndex];
-        const studentAnswer = studentAnswers[index] || '-';
-        
-        const isCorrect = studentAnswer === q.KunciJawaban;
+      currentQuestions.forEach((question, index) => {
+        const isCorrect = studentAnswers[index] === question.KunciJawaban;
         
         const item = document.createElement('div');
         item.className = `result-item ${isCorrect ? 'correct' : 'incorrect'}`;
         item.innerHTML = `
           <h5>Soal ${index + 1}</h5>
-          <p><strong>Pertanyaan:</strong> ${q.Pertanyaan}</p>
-          ${q.GambarSoal ? `<p><img src="${convertGoogleDriveUrl(q.GambarSoal) || ''}" style="max-width: 200px; max-height: 150px;"></p>` : ''}
-          <p><strong>Jawaban Anda:</strong> ${getOptionText(q, studentAnswer)}</p>
-          <p><strong>Jawaban Benar:</strong> ${getOptionText(q, q.KunciJawaban)}</p>
           <p class="result-status ${isCorrect ? 'correct' : 'incorrect'}">
             ${isCorrect ? '✅ Jawaban Anda Benar' : '❌ Jawaban Anda Salah'}
           </p>
@@ -763,33 +614,39 @@
         detailsContainer.appendChild(item);
       });
       
+      // Switch to result screen
       document.getElementById('review-screen').classList.remove('active');
       document.getElementById('result-screen').classList.add('active');
     }
 
-    function getOptionText(question, optionKey) {
-      if (!question) return 'Tidak ada data soal';
-      if (optionKey === '-') return 'Tidak menjawab';
-      
-      const optionText = question[`Pilihan${optionKey}`] || 'Tidak ada pilihan';
-      
-      if (isImageUrl(optionText)) {
-        return '[Gambar]';
-      }
-      
-      return optionText;
-    }
-
     function finishQuiz() {
+      // Switch back to login screen
       document.getElementById('result-screen').classList.remove('active');
       document.getElementById('login-screen').classList.add('active');
       
+      // Reset form
       document.getElementById('login-form').reset();
       document.getElementById('login-error').classList.add('d-none');
       
+      // Clear data
       currentQuestions = [];
       studentAnswers = {};
       currentQuestionIndex = 0;
+    }
+
+    function showLoading(show) {
+      const loadingElement = document.getElementById('loading-overlay');
+      if (show) {
+        loadingElement.classList.remove('d-none');
+      } else {
+        loadingElement.classList.add('d-none');
+      }
+    }
+
+    function showLoginError(message) {
+      const errorElement = document.getElementById('login-error');
+      errorElement.textContent = message;
+      errorElement.classList.remove('d-none');
     }
   </script>
 </body>
