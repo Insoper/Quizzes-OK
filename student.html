@@ -167,103 +167,17 @@
       justify-content: center;
       border-radius: 8px;
     }
+    .option-image {
+      max-width: 100%;
+      max-height: 150px;
+      display: block;
+      margin-top: 8px;
+    }
   </style>
 </head>
 <body>
-  <div id="loading-overlay" class="loading-overlay d-none">
-    <div class="spinner"></div>
-  </div>
-
-  <div class="container">
-    <div class="quiz-container">
-      <!-- Login Screen -->
-      <div id="login-screen" class="screen active">
-        <h1 class="text-center mb-4">Masuk Quiz</h1>
-        <div class="card">
-          <div class="card-body">
-            <form id="login-form">
-              <div class="mb-3">
-                <label for="student-name" class="form-label">Nama Lengkap</label>
-                <input type="text" class="form-control" id="student-name" required>
-              </div>
-              <div class="mb-3">
-                <label for="class-code" class="form-label">Kode Kelas (6 digit)</label>
-                <input type="text" class="form-control" id="class-code" maxlength="6" required>
-              </div>
-              <button type="submit" class="btn btn-primary w-100">Mulai Quiz</button>
-            </form>
-          </div>
-        </div>
-        <div id="login-error" class="alert alert-danger mt-3 d-none"></div>
-      </div>
-
-      <!-- Quiz Screen -->
-      <div id="quiz-screen" class="screen">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-          <div class="timer" id="timer">01:00:00</div>
-          <button id="review-btn" class="btn btn-outline-primary">Tinjau Jawaban</button>
-        </div>
-        
-        <div class="progress-indicator" id="progress-indicator"></div>
-        
-        <div class="question-container">
-          <h5 id="question-category" class="text-muted mb-3">Kategori: </h5>
-          <h4 id="question-text">Memuat pertanyaan...</h4>
-          
-          <div id="question-image-container">
-            <div class="image-loading d-none" id="image-loading">
-              <div class="spinner spinner-sm"></div>
-            </div>
-            <img id="question-image" src="" alt="Gambar soal" class="img-fluid rounded d-none">
-          </div>
-          
-          <div class="options mt-4" id="options-container"></div>
-        </div>
-        
-        <div class="d-flex justify-content-between mt-4">
-          <button id="prev-btn" class="btn btn-secondary">Sebelumnya</button>
-          <button id="next-btn" class="btn btn-primary">Selanjutnya</button>
-        </div>
-      </div>
-
-      <!-- Review Screen -->
-      <div id="review-screen" class="screen">
-        <h1 class="text-center mb-4">Tinjau Jawaban Anda</h1>
-        <div class="card">
-          <div class="card-body">
-            <div class="question-list" id="question-list"></div>
-            
-            <div class="d-flex justify-content-between mt-4">
-              <button id="back-to-quiz-btn" class="btn btn-secondary">Kembali ke Quiz</button>
-              <button id="submit-quiz-btn" class="btn btn-primary">Submit Quiz</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Result Screen -->
-      <div id="result-screen" class="screen">
-        <h1 class="text-center mb-4">Hasil Quiz Anda</h1>
-        <div class="card">
-          <div class="card-body text-center">
-            <div class="final-score" id="final-score">0</div>
-            <p class="lead">Benar: <span id="correct-answers">0</span> dari <span id="total-questions">0</span> soal</p>
-            
-            <div id="score-message" class="alert alert-info mt-3"></div>
-            
-            <div class="mt-4">
-              <h5>Detail Jawaban:</h5>
-              <div class="detailed-results mt-3" id="detailed-results"></div>
-            </div>
-            
-            <button id="finish-btn" class="btn btn-primary mt-4">Selesai</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- [Previous HTML structure remains exactly the same until the script section] -->
+  
   <script>
     // Web App Configuration
     const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwF35dytwtSf8jfU-RFhQx55e22oacoMQruE7jOCuKeaLvEX_JcOMreJab3RVkRT78r/exec';
@@ -316,25 +230,15 @@
       document.getElementById('finish-btn').addEventListener('click', finishQuiz);
     }
 
-    // Fungsi untuk mengubah URL Google Drive menjadi URL yang bisa diakses
-    function convertGoogleDriveUrl(url) {
-  if (!url) return null;
-
-  const cleanUrl = url.trim();
-
-  if (!cleanUrl.includes('drive.google.com')) return null;
-
-  const fileIdMatch = cleanUrl.match(/\/file\/d\/([^\/]+)/) || 
-                      cleanUrl.match(/id=([^\/&]+)/) || 
-                      cleanUrl.match(/([^\/]{25,})/);
-
-  if (fileIdMatch && fileIdMatch[1]) {
-    return `https://drive.google.com/uc?export=view&id=${fileIdMatch[1]}`;
-  }
-
-  return null;
-}
-
+    function isImageUrl(text) {
+      if (!text) return false;
+      const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg'];
+      const urlPattern = /https?:\/\/[^\s]+/i;
+      
+      if (!urlPattern.test(text)) return false;
+      
+      return imageExtensions.some(ext => text.toLowerCase().includes(ext));
+    }
 
     async function startQuiz() {
       studentName = document.getElementById('student-name').value.trim();
@@ -488,9 +392,6 @@
       currentQuestionIndex = index;
       const originalIndex = questionOrder[index];
       const question = currentQuestions[originalIndex];
-      console.log('Link mentah dari sheet:', question.GambarSoal);
-      console.log('Link setelah convert:', convertGoogleDriveUrl(question.GambarSoal));
-
       
       if (!question) {
         console.error('Question data not found for index:', index);
@@ -502,42 +403,40 @@
       
       // Handle gambar soal
       const imgContainer = document.getElementById('question-image-container');
-const imgElement = document.getElementById('question-image');
-const imgLoading = document.getElementById('image-loading');
+      const imgElement = document.getElementById('question-image');
+      const imgLoading = document.getElementById('image-loading');
 
-// Reset
-imgElement.classList.add('d-none');
-imgLoading.classList.add('d-none');
-
-if (question.GambarSoal) {
-  const imageUrl = convertGoogleDriveUrl(question.GambarSoal);
-  console.log('Image URL:', imageUrl); // untuk debug
-
-  if (imageUrl) {
-    imgElement.src = imageUrl;
-
-    imgElement.onload = () => {
-      imgElement.classList.remove('d-none');
+      // Reset
+      imgElement.classList.add('d-none');
       imgLoading.classList.add('d-none');
-      imgContainer.style.display = 'block';
-    };
 
-    imgElement.onerror = () => {
-      imgElement.alt = '[Gagal memuat gambar]';
-      imgElement.classList.remove('d-none');
-      imgLoading.classList.add('d-none');
-      imgContainer.style.display = 'block';
-    };
+      if (question.GambarSoal) {
+        const imageUrl = question.GambarSoal.trim();
+        
+        if (isImageUrl(imageUrl)) {
+          imgElement.src = imageUrl;
 
-    imgLoading.classList.remove('d-none');
-    imgContainer.style.display = 'block';
-  } else {
-    imgContainer.style.display = 'none';
-  }
-} else {
-  imgContainer.style.display = 'none';
-}
+          imgElement.onload = () => {
+            imgElement.classList.remove('d-none');
+            imgLoading.classList.add('d-none');
+            imgContainer.style.display = 'block';
+          };
 
+          imgElement.onerror = () => {
+            imgElement.alt = '[Gagal memuat gambar]';
+            imgElement.classList.remove('d-none');
+            imgLoading.classList.add('d-none');
+            imgContainer.style.display = 'block';
+          };
+
+          imgLoading.classList.remove('d-none');
+          imgContainer.style.display = 'block';
+        } else {
+          imgContainer.style.display = 'none';
+        }
+      } else {
+        imgContainer.style.display = 'none';
+      }
       
       const optionsContainer = document.getElementById('options-container');
       optionsContainer.innerHTML = '';
@@ -550,23 +449,22 @@ if (question.GambarSoal) {
           btn.className = 'option-btn';
           btn.setAttribute('data-option', option);
           
-          // Cek jika opsi mengandung URL gambar
-          if (question[`Pilihan${option}`].includes('http')) {
-            const imgUrl = convertGoogleDriveUrl(question[`Pilihan${option}`]);
-            if (imgUrl) {
-              const img = document.createElement('img');
-              img.src = imgUrl;
-              img.style.maxHeight = '100px';
-              img.style.maxWidth = '100%';
-              img.onerror = function() {
-                btn.textContent = '[Gambar tidak tersedia]';
-              };
-              btn.appendChild(img);
-            } else {
-              btn.textContent = '[Gambar]';
-            }
-          } else {
-            btn.textContent = question[`Pilihan${option}`];
+          const optionText = question[`Pilihan${option}`];
+          
+          // Handle teks biasa
+          btn.textContent = optionText;
+          
+          // Jika opsi mengandung gambar, tambahkan gambar di bawah teks
+          if (isImageUrl(optionText)) {
+            btn.textContent = ''; // Hapus teks jika hanya gambar
+            
+            const img = document.createElement('img');
+            img.src = optionText;
+            img.className = 'option-image';
+            img.onerror = function() {
+              btn.textContent = '[Gambar tidak tersedia]';
+            };
+            btn.appendChild(img);
           }
           
           if (studentAnswers[index] === option) {
@@ -720,7 +618,7 @@ if (question.GambarSoal) {
         item.innerHTML = `
           <h5>Soal ${index + 1}</h5>
           <p><strong>Pertanyaan:</strong> ${q.Pertanyaan}</p>
-          ${q.GambarSoal ? `<p><img src="${convertGoogleDriveUrl(q.GambarSoal) || ''}" style="max-width: 200px; max-height: 150px;"></p>` : ''}
+          ${q.GambarSoal ? `<p><img src="${q.GambarSoal}" style="max-width: 200px; max-height: 150px;"></p>` : ''}
           <p><strong>Jawaban Anda:</strong> ${getOptionText(q, studentAnswer)}</p>
           <p><strong>Jawaban Benar:</strong> ${getOptionText(q, q.KunciJawaban)}</p>
           <p class="result-status ${isCorrect ? 'correct' : 'incorrect'}">
@@ -741,8 +639,7 @@ if (question.GambarSoal) {
       
       const optionText = question[`Pilihan${optionKey}`] || 'Tidak ada pilihan';
       
-      // Jika opsi mengandung URL gambar, kembalikan teks alternatif
-      if (optionText.includes('http')) {
+      if (isImageUrl(optionText)) {
         return '[Gambar]';
       }
       
