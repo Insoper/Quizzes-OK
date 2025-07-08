@@ -498,97 +498,123 @@
     }
 
     function showQuestion(index) {
-      if (index < 0 || index >= currentQuestions.length) return;
-      
-      currentQuestionIndex = index;
-      const originalIndex = questionOrder[index];
-      const question = currentQuestions[originalIndex];
-      
-      if (!question) {
-        console.error('Question data not found for index:', index);
-        return;
-      }
-      
-      document.getElementById('question-category').textContent = `Kategori: ${question.Kategori}`;
-      document.getElementById('question-text').textContent = question.Pertanyaan;
-      
-      // Handle gambar soal
-      const imgContainer = document.getElementById('question-image-container');
-      const imgElement = document.getElementById('question-image');
-      const imgLoading = document.getElementById('image-loading');
+  if (index < 0 || index >= currentQuestions.length) return;
+  
+  currentQuestionIndex = index;
+  const originalIndex = questionOrder[index];
+  const question = currentQuestions[originalIndex];
+  
+  if (!question) {
+    console.error('Question data not found for index:', index);
+    return;
+  }
+  
+  // Tampilkan pertanyaan
+  document.getElementById('question-category').textContent = `Kategori: ${question.Kategori}`;
+  document.getElementById('question-text').textContent = question.Pertanyaan;
+  
+  // Handle gambar soal
+  const imgContainer = document.getElementById('question-image-container');
+  const imgElement = document.getElementById('question-image');
+  const imgLoading = document.getElementById('image-loading');
 
-      // Reset state
-      imgElement.classList.add('d-none');
+  // Reset state
+  imgElement.classList.add('d-none');
+  imgLoading.classList.add('d-none');
+  imgContainer.style.display = 'none';
+
+  // Jika ada gambar
+  if (question.GambarSoal) {
+    console.log('Loading image:', question.GambarSoal); // Debug log
+    
+    imgContainer.style.display = 'block';
+    imgLoading.classList.remove('d-none');
+    
+    imgElement.onload = function() {
+      console.log('Image loaded successfully'); // Debug log
       imgLoading.classList.add('d-none');
-      imgContainer.style.display = 'none';
-      imgContainer.style.opacity = '0';
-
-      if (question.GambarSoal) {
-        const imageUrl = convertGoogleDriveUrl(question.GambarSoal);
-        
-        if (imageUrl) {
-          imgContainer.style.display = 'block';
-          imgLoading.classList.remove('d-none');
-          
-          imgElement.onload = function() {
-            imgLoading.classList.add('d-none');
-            imgElement.classList.remove('d-none');
-            imgContainer.style.opacity = '1';
-            imgContainer.classList.add('fade-in');
-          };
-          
-          imgElement.onerror = function() {
-            imgLoading.classList.add('d-none');
-            imgElement.alt = 'Gambar tidak dapat dimuat';
-            imgElement.classList.remove('d-none');
-            imgContainer.style.opacity = '1';
-          };
-          
-          imgElement.src = imageUrl;
-        }
+      imgElement.classList.remove('d-none');
+    };
+    
+    imgElement.onerror = function() {
+      console.error('Failed to load image:', question.GambarSoal); // Debug log
+      imgLoading.classList.add('d-none');
+      imgElement.alt = 'Gambar tidak dapat dimuat';
+      imgElement.classList.remove('d-none');
+    };
+    
+    // Gunakan URL langsung atau tambahkan cache buster
+    imgElement.src = question.GambarSoal + '?t=' + new Date().getTime();
+  } else {
+    imgContainer.style.display = 'none';
+  }
+  
+  // Tampilkan opsi jawaban
+  const optionsContainer = document.getElementById('options-container');
+  optionsContainer.innerHTML = '';
+  
+  const currentOptionOrder = optionOrders[originalIndex];
+  
+  currentOptionOrder.forEach(option => {
+    if (question[`Pilihan${option}`]) {
+      const btn = document.createElement('button');
+      btn.className = 'option-btn';
+      btn.setAttribute('data-option', option);
+      
+      const optionText = question[`Pilihan${option}`];
+      
+      // Cek jika opsi berupa gambar
+      if (optionText && typeof optionText === 'string' && 
+          /\.(jpg|jpeg|png|gif|webp|svg)(\?.*)?$/i.test(optionText)) {
+        const img = document.createElement('img');
+        img.src = convertGoogleDriveUrl(optionText) || optionText;
+        img.className = 'option-image';
+        img.onerror = function() {
+          console.error('Failed to load option image:', optionText);
+          btn.textContent = '[Gambar tidak tersedia]';
+        };
+        btn.appendChild(img);
+      } else {
+        btn.textContent = optionText;
       }
       
-      // Tampilkan opsi jawaban
-      const optionsContainer = document.getElementById('options-container');
-      optionsContainer.innerHTML = '';
+      if (studentAnswers[index] === option) {
+        btn.classList.add('selected');
+      }
       
-      const currentOptionOrder = optionOrders[originalIndex];
-      
-      currentOptionOrder.forEach(option => {
-        if (question[`Pilihan${option}`]) {
-          const btn = document.createElement('button');
-          btn.className = 'option-btn';
-          btn.setAttribute('data-option', option);
-          
-          const optionText = question[`Pilihan${option}`];
-          const optionImageUrl = convertGoogleDriveUrl(optionText);
-          
-          if (isImageUrl(optionText)) {
-            const img = document.createElement('img');
-            img.src = optionImageUrl || optionText;
-            img.className = 'option-image';
-            img.onerror = function() {
-              btn.textContent = '[Gambar tidak tersedia]';
-            };
-            btn.appendChild(img);
-          } else {
-            btn.textContent = optionText;
-          }
-          
-          if (studentAnswers[index] === option) {
-            btn.classList.add('selected');
-          }
-          
-          optionsContainer.appendChild(btn);
-        }
-      });
-      
-      document.getElementById('prev-btn').disabled = index === 0;
-      document.getElementById('next-btn').textContent = 
-        index === currentQuestions.length - 1 ? 'Selesai' : 'Selanjutnya';
-      
-      updateProgressIndicator();
+      optionsContainer.appendChild(btn);
     }
+  });
+  
+  // Update navigasi
+  document.getElementById('prev-btn').disabled = index === 0;
+  document.getElementById('next-btn').textContent = 
+    index === currentQuestions.length - 1 ? 'Selesai' : 'Selanjutnya';
+  
+  updateProgressIndicator();
+}
+
+    function convertGoogleDriveUrl(url) {
+  if (!url) return null;
+  
+  // Jika sudah format uc?export=view, langsung return
+  if (url.includes('uc?export=view')) return url;
+  
+  const patterns = [
+    /\/d\/([^\/]+)/,
+    /id=([^&]+)/,
+    /([a-zA-Z0-9-_]{33,})/
+  ];
+  
+  for (const pattern of patterns) {
+    const match = url.match(pattern);
+    if (match && match[1]) {
+      return `https://drive.google.com/uc?export=view&id=${match[1]}`;
+    }
+  }
+  
+  return null;
+}
 
     function selectAnswer(button) {
       const selectedOption = button.getAttribute('data-option');
