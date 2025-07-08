@@ -447,8 +447,8 @@
       // Event listener untuk tombol reload
       document.getElementById('reload-btn').addEventListener('click', function() {
         if (confirm('Apakah Anda yakin ingin memuat ulang aplikasi? Progress yang belum disubmit akan hilang.')) {
-          clearSavedState();
-          location.reload();
+          finishQuiz(); // Reset semua state terlebih dahulu
+          location.reload(); // Lalu reload halaman
         }
       });
       
@@ -805,18 +805,33 @@
     }
 
     function finishQuiz() {
-      // Switch back to login screen
-      document.getElementById('result-screen').classList.remove('active');
+      // Hentikan timer jika ada
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+      
+      // Reset semua screen ke state awal
+      document.querySelectorAll('.screen').forEach(screen => {
+        screen.classList.remove('active');
+      });
       document.getElementById('login-screen').classList.add('active');
       
       // Reset form
       document.getElementById('login-form').reset();
       document.getElementById('login-error').classList.add('d-none');
       
-      // Clear data
+      // Clear semua data
       currentQuestions = [];
       studentAnswers = {};
       currentQuestionIndex = 0;
+      quizEndTime = null;
+      classInfo = null;
+      studentName = '';
+      questionOrder = [];
+      optionOrders = {};
+      
+      // Hapus data dari localStorage
       clearSavedState();
     }
 
