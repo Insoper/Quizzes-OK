@@ -24,6 +24,9 @@
       padding: 20px;
       border-radius: 8px;
       background-color: #f8f9fa;
+      position: relative;
+      min-height: 300px;
+      padding-bottom: 70px;
     }
     .option-btn {
       display: block;
@@ -59,6 +62,7 @@
       border-radius: 8px;
       margin: 15px 0;
       display: none;
+      cursor: pointer;
     }
     .loading-overlay {
       position: fixed;
@@ -89,6 +93,7 @@
       max-height: 100px;
       display: block;
       margin: 5px auto;
+      cursor: pointer;
     }
     .progress-indicator {
       display: flex;
@@ -163,9 +168,80 @@
     .review-item.unanswered {
       background-color: #f8f9fa;
     }
+    /* Modal untuk gambar diperbesar */
+    .modal-image {
+      max-width: 100%;
+      max-height: 80vh;
+      display: block;
+      margin: 0 auto;
+    }
+    .modal-dialog {
+      max-width: 90%;
+    }
+    #imageModal .modal-body {
+      text-align: center;
+      padding: 0;
+    }
+    #imageModal .modal-content {
+      background-color: transparent;
+      border: none;
+    }
+    #imageModal .btn-close {
+      position: absolute;
+      right: 10px;
+      top: 10px;
+      background: white;
+      opacity: 1;
+      z-index: 1000;
+    }
+    /* Tombol reload */
+    #reload-btn {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 1000;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    /* Navigation buttons fix */
+    .navigation-buttons-container {
+      position: absolute;
+      bottom: 20px;
+      left: 0;
+      right: 0;
+      padding: 0 20px;
+    }
+    .navigation-buttons-container .btn {
+      min-width: 120px;
+    }
   </style>
 </head>
 <body>
+  <!-- Modal untuk gambar diperbesar -->
+  <div class="modal fade" id="imageModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        <div class="modal-body">
+          <img id="modalImage" class="modal-image" src="">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tombol reload -->
+  <button id="reload-btn" class="btn btn-primary" title="Reload Aplikasi">
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+      <path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/>
+      <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/>
+    </svg>
+  </button>
+
   <div id="loading-overlay" class="loading-overlay d-none">
     <div class="spinner"></div>
   </div>
@@ -208,11 +284,13 @@
           <img id="question-image" src="" alt="Gambar soal">
           
           <div class="options mt-4" id="options-container"></div>
-        </div>
-        
-        <div class="d-flex justify-content-between mt-4">
-          <button id="prev-btn" class="btn btn-secondary">Sebelumnya</button>
-          <button id="next-btn" class="btn btn-primary">Selanjutnya</button>
+          
+          <div class="navigation-buttons-container">
+            <div class="d-flex justify-content-between">
+              <button id="prev-btn" class="btn btn-secondary">Sebelumnya</button>
+              <button id="next-btn" class="btn btn-primary">Selanjutnya</button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -271,6 +349,7 @@
   <script>
     // Web App Configuration - Ganti dengan URL Web App Anda
     const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxYZq7VCNTpDT86akyekxKTAng5KdESmW77kbfW-40edkOfVd1DIKv6PGGZ3Fnb5FccAw/exec';
+    const STORAGE_KEY = 'quizAppData';
     
     // Global variables
     let currentQuestions = [];
@@ -282,11 +361,75 @@
     let studentName = '';
     let questionOrder = [];
     let optionOrders = {};
+    let imageModal = null;
 
     // Initialize
     document.addEventListener('DOMContentLoaded', function() {
       setupEventListeners();
+      checkSavedState();
+      
+      // Inisialisasi modal gambar
+      imageModal = new bootstrap.Modal(document.getElementById('imageModal'));
     });
+
+    function checkSavedState() {
+      const savedData = localStorage.getItem(STORAGE_KEY);
+      if (savedData) {
+        try {
+          const parsedData = JSON.parse(savedData);
+          
+          // Periksa apakah data yang disimpan masih valid
+          if (parsedData.expiry && new Date(parsedData.expiry) > new Date()) {
+            studentName = parsedData.studentName;
+            classInfo = parsedData.classInfo;
+            currentQuestions = parsedData.currentQuestions;
+            studentAnswers = parsedData.studentAnswers || {};
+            currentQuestionIndex = parsedData.currentQuestionIndex || 0;
+            quizEndTime = new Date(parsedData.quizEndTime);
+            questionOrder = parsedData.questionOrder || [];
+            optionOrders = parsedData.optionOrders || {};
+            
+            // Isi form login
+            document.getElementById('student-name').value = studentName;
+            document.getElementById('class-code').value = classInfo.KodeKelas;
+            
+            // Lanjutkan ke screen yang sesuai
+            if (parsedData.currentScreen === 'quiz') {
+              initializeQuiz();
+            } else if (parsedData.currentScreen === 'review') {
+              initializeQuiz();
+              showReviewScreen();
+            }
+          } else {
+            // Data sudah kadaluarsa, hapus dari storage
+            localStorage.removeItem(STORAGE_KEY);
+          }
+        } catch (e) {
+          console.error('Error parsing saved data:', e);
+          localStorage.removeItem(STORAGE_KEY);
+        }
+      }
+    }
+
+    function saveState(currentScreen) {
+      const quizData = {
+        studentName,
+        classInfo,
+        currentQuestions,
+        studentAnswers,
+        currentQuestionIndex,
+        quizEndTime: quizEndTime.toISOString(),
+        questionOrder,
+        optionOrders,
+        currentScreen,
+        expiry: quizEndTime.toISOString() // Data akan kadaluarsa saat waktu quiz berakhir
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(quizData));
+    }
+
+    function clearSavedState() {
+      localStorage.removeItem(STORAGE_KEY);
+    }
 
     function setupEventListeners() {
       document.getElementById('login-form').addEventListener('submit', function(e) {
@@ -300,6 +443,34 @@
       document.getElementById('back-to-quiz-btn').addEventListener('click', backToQuiz);
       document.getElementById('submit-quiz-btn').addEventListener('click', confirmSubmit);
       document.getElementById('finish-btn').addEventListener('click', finishQuiz);
+      
+      // Event listener untuk tombol reload
+      document.getElementById('reload-btn').addEventListener('click', function() {
+        if (confirm('Apakah Anda yakin ingin memuat ulang aplikasi? Progress yang belum disubmit akan hilang.')) {
+          clearSavedState();
+          location.reload();
+        }
+      });
+      
+      // Event listener untuk gambar yang bisa diklik
+      document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('option-image') || e.target.id === 'question-image') {
+          const imgSrc = e.target.src;
+          if (imgSrc) {
+            document.getElementById('modalImage').src = imgSrc;
+            imageModal.show();
+          }
+        }
+      });
+
+      // Simpan state saat user meninggalkan halaman
+      window.addEventListener('beforeunload', function() {
+        if (document.getElementById('quiz-screen').classList.contains('active')) {
+          saveState('quiz');
+        } else if (document.getElementById('review-screen').classList.contains('active')) {
+          saveState('review');
+        }
+      });
     }
 
     async function startQuiz() {
@@ -362,8 +533,8 @@
     }
 
     function initializeQuiz() {
-      studentAnswers = {};
-      currentQuestionIndex = 0;
+      studentAnswers = studentAnswers || {};
+      currentQuestionIndex = currentQuestionIndex || 0;
       setupProgressIndicator();
       startTimer();
       showQuestion(currentQuestionIndex);
@@ -371,6 +542,9 @@
       // Switch to quiz screen
       document.getElementById('login-screen').classList.remove('active');
       document.getElementById('quiz-screen').classList.add('active');
+      
+      // Simpan state
+      saveState('quiz');
     }
 
     function setupProgressIndicator() {
@@ -471,13 +645,17 @@
           btn.classList.add('selected');
         }
         
-        btn.addEventListener('click', function() {
-          document.querySelectorAll('.option-btn').forEach(btn => {
-            btn.classList.remove('selected');
-          });
-          this.classList.add('selected');
-          studentAnswers[index] = option;
-          updateProgressIndicator();
+        btn.addEventListener('click', function(e) {
+          // Hindari trigger saat mengklik gambar
+          if (!e.target.classList.contains('option-image')) {
+            document.querySelectorAll('.option-btn').forEach(btn => {
+              btn.classList.remove('selected');
+            });
+            this.classList.add('selected');
+            studentAnswers[index] = option;
+            updateProgressIndicator();
+            saveState('quiz');
+          }
         });
         
         optionsContainer.appendChild(btn);
@@ -500,12 +678,14 @@
     function goToPreviousQuestion() {
       if (currentQuestionIndex > 0) {
         showQuestion(currentQuestionIndex - 1);
+        saveState('quiz');
       }
     }
 
     function goToNextQuestion() {
       if (currentQuestionIndex < currentQuestions.length - 1) {
         showQuestion(currentQuestionIndex + 1);
+        saveState('quiz');
       } else {
         showReviewScreen();
       }
@@ -513,6 +693,7 @@
 
     function goToQuestion(index) {
       showQuestion(index);
+      saveState('quiz');
     }
 
     function showReviewScreen() {
@@ -540,11 +721,14 @@
       // Switch to review screen
       document.getElementById('quiz-screen').classList.remove('active');
       document.getElementById('review-screen').classList.add('active');
+      
+      saveState('review');
     }
 
     function backToQuiz() {
       document.getElementById('review-screen').classList.remove('active');
       document.getElementById('quiz-screen').classList.add('active');
+      saveState('quiz');
     }
 
     function confirmSubmit() {
@@ -572,6 +756,7 @@
         const resultData = await response.json();
         
         if (resultData.status === 'success') {
+          clearSavedState();
           showResults(resultData);
         } else {
           throw new Error(resultData.message || 'Gagal mengirim jawaban');
@@ -632,6 +817,7 @@
       currentQuestions = [];
       studentAnswers = {};
       currentQuestionIndex = 0;
+      clearSavedState();
     }
 
     function showLoading(show) {
