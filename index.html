@@ -253,6 +253,60 @@
 .class-summary strong {
   color: #495057;
 }
+
+/* Tambahkan di bagian style */
+@media (max-width: 768px) {
+  #active-quiz-table {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  #active-quiz-table thead {
+    display: none;
+  }
+  
+  #active-quiz-table tbody {
+    display: block;
+    width: 100%;
+  }
+  
+  #active-quiz-table tr {
+    display: block;
+    margin-bottom: 15px;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    background-color: white;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  }
+  
+  #active-quiz-table td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 15px;
+    border: none;
+    border-bottom: 1px solid #eee;
+  }
+  
+  #active-quiz-table td:before {
+    content: attr(data-label);
+    font-weight: bold;
+    margin-right: 10px;
+    color: #495057;
+    flex: 1;
+  }
+  
+  #active-quiz-table td:last-child {
+    border-bottom: none;
+  }
+  
+  #active-quiz-table td span {
+    flex: 2;
+    text-align: right;
+  }
+}
   </style>
 </head>
 <body>
@@ -508,29 +562,36 @@
       document.body.classList.add('panel-mode');
     }
 
-    function setupInstructorPanel() {
-      // Hapus event listener sebelumnya jika ada
-      document.getElementById('create-quiz-form').removeEventListener('submit', handleQuizSubmit);
-      // Tambahkan event listener baru
-      document.getElementById('create-quiz-form').addEventListener('submit', handleQuizSubmit);
-      
-      document.getElementById('filter-results').addEventListener('click', function() {
+function setupInstructorPanel() {
+  // Hapus event listener sebelumnya jika ada
+  document.getElementById('create-quiz-form').removeEventListener('submit', handleQuizSubmit);
+  // Tambahkan event listener baru
+  document.getElementById('create-quiz-form').addEventListener('submit', handleQuizSubmit);
+  
+  document.getElementById('filter-results').addEventListener('click', function() {
+    loadResults();
+  });
+  
+  document.querySelectorAll('[data-bs-toggle="tab"]').forEach(tab => {
+    tab.addEventListener('shown.bs.tab', function(event) {
+      if (event.target.id === 'active-tab') {
+        loadActiveClasses();
+      } else if (event.target.id === 'results-tab') {
         loadResults();
-      });
-      
-      document.querySelectorAll('[data-bs-toggle="tab"]').forEach(tab => {
-        tab.addEventListener('shown.bs.tab', function(event) {
-          if (event.target.id === 'active-tab') {
-            loadActiveClasses();
-          } else if (event.target.id === 'results-tab') {
-            loadResults();
-          }
-        });
-      });
+      }
+    });
+  });
 
-      loadCategories();
-      loadActiveClasses();
+  loadCategories();
+  loadActiveClasses();
+
+  // Tambahkan event listener untuk resize di sini
+  window.addEventListener('resize', function() {
+    if (document.getElementById('active-tab').classList.contains('active')) {
+      renderActiveClassesTable();
     }
+  });
+}
 
     // Fungsi terpisah untuk handle submit quiz
     function handleQuizSubmit(e) {
@@ -673,43 +734,56 @@
     }
 
     function renderActiveClassesTable() {
-      const tbody = document.querySelector('#active-quiz-table tbody');
-      if (!tbody) return;
+  const tbody = document.querySelector('#active-quiz-table tbody');
+  if (!tbody) return;
+  
+  tbody.innerHTML = '';
+  
+  if (activeClasses.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" class="text-center">Tidak ada quiz aktif</td></tr>';
+    return;
+  }
+  
+  const now = new Date();
+  let hasActiveClasses = false;
+  const isMobile = window.innerWidth <= 768;
+  
+  activeClasses.forEach(cls => {
+    const startTime = cls.WaktuMulai ? new Date(cls.WaktuMulai) : null;
+    const endTime = cls.WaktuBerakhir ? new Date(cls.WaktuBerakhir) : null;
+    
+    if (startTime && endTime && now >= startTime && now <= endTime) {
+      hasActiveClasses = true;
+      const row = document.createElement('tr');
       
-      tbody.innerHTML = '';
-      
-      if (activeClasses.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="text-center">Tidak ada quiz aktif</td></tr>';
-        return;
+      if (isMobile) {
+        row.innerHTML = `
+          <td data-label="Kode">${cls.KodeKelas || '-'}</td>
+          <td data-label="Kategori">${cls.Kategori || '-'}</td>
+          <td data-label="Durasi">${cls.Durasi ? cls.Durasi + ' menit' : '-'}</td>
+          <td data-label="Mulai">${formatDateTime(startTime)}</td>
+          <td data-label="Berakhir">${formatDateTime(endTime)}</td>
+          <td data-label="Instruktur">${cls.Instruktur || '-'}</td>
+        `;
+      } else {
+        row.innerHTML = `
+          <td>${cls.KodeKelas || '-'}</td>
+          <td>${cls.Kategori || '-'}</td>
+          <td>${cls.Durasi ? cls.Durasi + ' menit' : '-'}</td>
+          <td>${formatDateTime(startTime)}</td>
+          <td>${formatDateTime(endTime)}</td>
+          <td>${cls.Instruktur || '-'}</td>
+        `;
       }
       
-      const now = new Date();
-      let hasActiveClasses = false;
-      
-      activeClasses.forEach(cls => {
-        const startTime = cls.WaktuMulai ? new Date(cls.WaktuMulai) : null;
-        const endTime = cls.WaktuBerakhir ? new Date(cls.WaktuBerakhir) : null;
-        
-        // Only show classes that are currently active (now is between start and end time)
-        if (startTime && endTime && now >= startTime && now <= endTime) {
-          hasActiveClasses = true;
-          const row = document.createElement('tr');
-          row.innerHTML = `
-            <td>${cls.KodeKelas || '-'}</td>
-            <td>${cls.Kategori || '-'}</td>
-            <td>${cls.Durasi ? cls.Durasi + ' menit' : '-'}</td>
-            <td>${formatDateTime(startTime)}</td>
-            <td>${formatDateTime(endTime)}</td>
-            <td>${cls.Instruktur || '-'}</td>
-          `;
-          tbody.appendChild(row);
-        }
-      });
-      
-      if (!hasActiveClasses) {
-        tbody.innerHTML = '<tr><td colspan="6" class="text-center">Tidak ada quiz yang sedang berlangsung saat ini</td></tr>';
-      }
+      tbody.appendChild(row);
     }
+  });
+  
+  if (!hasActiveClasses) {
+    tbody.innerHTML = '<tr><td colspan="6" class="text-center">Tidak ada quiz yang sedang berlangsung saat ini</td></tr>';
+  }
+}
 
     function formatDateTime(date) {
       if (!date) return '-';
