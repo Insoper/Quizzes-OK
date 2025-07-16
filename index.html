@@ -194,6 +194,65 @@
       overflow-x: auto;
       -webkit-overflow-scrolling: touch;
     }
+
+.class-group {
+  margin-bottom: 15px;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.class-header {
+  background-color: #f8f9fa;
+  padding: 12px 15px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 500;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.class-header:hover {
+  background-color: #e9ecef;
+}
+
+.class-header .toggle-icon {
+  transition: transform 0.3s;
+  font-size: 0.8rem;
+  color: #6c757d;
+}
+
+.class-header.collapsed .toggle-icon {
+  transform: rotate(-90deg);
+}
+
+.class-body {
+  padding: 0;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease-out;
+}
+
+.class-body.expanded {
+  max-height: 1000px;
+}
+
+.class-summary {
+  padding: 10px 15px;
+  font-size: 0.85rem;
+  color: #6c757d;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.class-summary span {
+  margin-right: 15px;
+}
+
+.class-summary strong {
+  color: #495057;
+}
   </style>
 </head>
 <body>
@@ -316,36 +375,23 @@
           </div>
           <div class="card-body">
             <div class="row mb-3">
-              <div class="col-md-4">
-                <label for="filter-category" class="form-label">Filter Kategori</label>
-                <select class="form-select" id="filter-category">
-                  <option value="all">Semua Kategori</option>
-                  <!-- Categories will be loaded dynamically -->
-                </select>
-              </div>
-              <div class="col-md-4">
-                <label for="filter-class" class="form-label">Filter Kode Kelas</label>
-                <input type="text" class="form-control" id="filter-class" placeholder="Masukkan kode kelas">
-              </div>
-              <div class="col-md-4 d-flex align-items-end">
-                <button class="btn btn-primary" id="filter-results">
-                  <span id="filter-results-text">Terapkan Filter</span>
-                  <span id="filter-results-spinner" class="loading-spinner d-none"></span>
-                </button>
-              </div>
-            </div>
+  <div class="col-md-6">
+    <label for="filter-category" class="form-label">Filter Kategori</label>
+    <select class="form-select" id="filter-category">
+      <option value="all">Semua Kategori</option>
+      <!-- Categories will be loaded dynamically -->
+    </select>
+  </div>
+  <div class="col-md-6 d-flex align-items-end">
+    <button class="btn btn-primary" id="filter-results">
+      <span id="filter-results-text">Terapkan Filter</span>
+      <span id="filter-results-spinner" class="loading-spinner d-none"></span>
+    </button>
+  </div>
+</div>
             
             <div class="table-responsive">
               <table class="table table-striped table-hover" id="results-table">
-                <thead>
-                  <tr>
-                    <th>Timestamp</th>
-                    <th>Nama Siswa</th>
-                    <th>Kode Kelas</th>
-                    <th>Kategori</th>
-                    <th>Skor</th>
-                  </tr>
-                </thead>
                 <tbody>
                   <tr>
                     <td colspan="6" class="text-center">Gunakan filter untuk melihat hasil</td>
@@ -666,90 +712,168 @@
       });
     }
 
-    async function loadResults() {
-      const category = document.getElementById('filter-category').value;
-      const classCode = document.getElementById('filter-class').value.trim();
-      
-      const filterBtn = document.getElementById('filter-results');
-      const filterText = document.getElementById('filter-results-text');
-      const filterSpinner = document.getElementById('filter-results-spinner');
-      
-      filterBtn.disabled = true;
-      filterText.textContent = 'Memuat hasil...';
-      filterSpinner.classList.remove('d-none');
-      
-      const tbody = document.querySelector('#results-table tbody');
-      if (tbody) {
-        tbody.innerHTML = `
-          <tr>
-            <td colspan="6" class="text-center">
-              <div class="d-flex align-items-center justify-content-center">
-                <span class="loading-spinner me-2"></span>
-                Memuat hasil quiz...
-              </div>
-            </td>
-          </tr>
-        `;
-      }
-      
-      try {
-        let url = `${WEB_APP_URL}?action=getResults`;
-        if (category !== 'all') url += `&category=${encodeURIComponent(category)}`;
-        if (classCode) url += `&classCode=${encodeURIComponent(classCode)}`;
-        
-        const response = await fetch(url);
-        const data = await response.json();
-        
-        if (data.status === 'success') {
-          resultsData = data.data;
-          renderResultsTable();
-        } else {
-          throw new Error(data.message || 'Gagal memuat hasil');
-        }
-      } catch (error) {
-        console.error('Error:', error);
-        if (tbody) {
-          tbody.innerHTML = `
-            <tr>
-              <td colspan="6" class="text-center text-danger">
-                Gagal memuat hasil quiz
-              </td>
-            </tr>
-          `;
-        }
-      } finally {
-        filterBtn.disabled = false;
-        filterText.textContent = 'Terapkan Filter';
-        filterSpinner.classList.add('d-none');
-      }
+async function loadResults() {
+  const category = document.getElementById('filter-category').value;
+  
+  const filterBtn = document.getElementById('filter-results');
+  const filterText = document.getElementById('filter-results-text');
+  const filterSpinner = document.getElementById('filter-results-spinner');
+  
+  filterBtn.disabled = true;
+  filterText.textContent = 'Memuat...';
+  filterSpinner.classList.remove('d-none');
+  
+  const tbody = document.querySelector('#results-table tbody');
+  tbody.innerHTML = `
+    <tr>
+      <td colspan="1" class="text-center">
+        <div class="d-flex align-items-center justify-content-center">
+          <span class="loading-spinner me-2"></span>
+          Memuat hasil quiz...
+        </div>
+      </td>
+    </tr>
+  `;
+  
+  try {
+    let url = `${WEB_APP_URL}?action=getResults`;
+    if (category !== 'all') url += `&category=${encodeURIComponent(category)}`;
+    
+    const response = await fetch(url);
+    const data = await response.json();
+    
+    if (data.status === 'success') {
+      resultsData = data.data;
+      renderResultsTable();
+    } else {
+      throw new Error(data.message || 'Gagal memuat hasil');
     }
+  } catch (error) {
+    console.error('Error:', error);
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="1" class="text-center text-danger">
+          Gagal memuat hasil quiz
+        </td>
+      </tr>
+    `;
+  } finally {
+    filterBtn.disabled = false;
+    filterText.textContent = 'Terapkan Filter';
+    filterSpinner.classList.add('d-none');
+  }
+}
 
-    function renderResultsTable() {
-      const tbody = document.querySelector('#results-table tbody');
-      if (!tbody) return;
-      
-      tbody.innerHTML = '';
-      
-      if (!resultsData || resultsData.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" class="text-center">Tidak ada hasil quiz yang sesuai dengan filter</td></tr>';
-        return;
-      }
-      
-      resultsData.forEach(result => {
-        const row = document.createElement('tr');
-        const timestamp = result.Timestamp ? new Date(result.Timestamp) : null;
-        
-        row.innerHTML = `
-          <td>${timestamp ? formatDateTime(timestamp) : '-'}</td>
-          <td>${result.NamaSiswa || '-'}</td>
-          <td>${result.KodeKelas || '-'}</td>
-          <td>${result.Kategori || '-'}</td>
-          <td>${result.Skor || '0'}</td>
-        `;
-        
-        tbody.appendChild(row);
-      });
+function renderResultsTable() {
+  const tbody = document.querySelector('#results-table tbody');
+  if (!tbody) return;
+  
+  tbody.innerHTML = '';
+  
+  if (!resultsData || resultsData.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="1" class="text-center">Tidak ada hasil quiz</td></tr>';
+    return;
+  }
+  
+  // Kelompokkan data berdasarkan Kode Kelas
+  const groupedResults = {};
+  resultsData.forEach(result => {
+    const classCode = result.KodeKelas || 'Tanpa Kode';
+    if (!groupedResults[classCode]) {
+      groupedResults[classCode] = [];
     }
+    groupedResults[classCode].push(result);
+  });
+  
+  // Buat tampilan untuk setiap kelompok kelas
+  Object.keys(groupedResults).forEach(classCode => {
+    const classResults = groupedResults[classCode];
+    const firstResult = classResults[0];
+    
+    // Hitung statistik
+    const totalStudents = classResults.length;
+    const averageScore = classResults.reduce((sum, result) => sum + (parseInt(result.Skor) || 0), 0) / totalStudents;
+    
+    // Buat elemen kelompok kelas
+    const groupDiv = document.createElement('div');
+    groupDiv.className = 'class-group';
+    
+    // Header kelompok (awalnya minimized)
+    const headerDiv = document.createElement('div');
+    headerDiv.className = 'class-header collapsed';
+    headerDiv.innerHTML = `
+      <div>
+        <strong>Kode Kelas: ${classCode}</strong> | 
+        Kategori: ${firstResult.Kategori || '-'} | 
+        Jumlah Siswa: ${totalStudents}
+      </div>
+      <div class="toggle-icon">▼</div>
+    `;
+    
+    // Body kelompok (awalnya collapsed)
+    const bodyDiv = document.createElement('div');
+    bodyDiv.className = 'class-body collapsed';
+    
+    // Summary statistik
+    const summaryDiv = document.createElement('div');
+    summaryDiv.className = 'class-summary';
+    summaryDiv.innerHTML = `
+      <span><strong>Rata-rata Skor:</strong> ${averageScore.toFixed(2)}</span>
+    `;
+    
+    // Tabel hasil
+    const table = document.createElement('table');
+    table.className = 'table table-sm table-borderless mb-0';
+    table.innerHTML = `
+      <thead>
+        <tr>
+          <th>No</th>
+          <th>Nama Siswa</th>
+          <th>Skor</th>
+          <th>Timestamp</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${classResults.map((result, index) => `
+          <tr>
+            <td>${index + 1}</td>
+            <td>${result.NamaSiswa || '-'}</td>
+            <td>${result.Skor || '0'}</td>
+            <td>${result.Timestamp ? formatDateTime(new Date(result.Timestamp)) : '-'}</td>
+          </tr>
+        `).join('')}
+      </tbody>
+    `;
+    
+    bodyDiv.appendChild(summaryDiv);
+    bodyDiv.appendChild(table);
+    
+    // Gabungkan semua elemen
+    groupDiv.appendChild(headerDiv);
+    groupDiv.appendChild(bodyDiv);
+    
+    // Tambahkan event listener untuk toggle
+    headerDiv.addEventListener('click', function() {
+      const isCollapsed = bodyDiv.classList.contains('collapsed');
+      bodyDiv.classList.toggle('collapsed', !isCollapsed);
+      bodyDiv.classList.toggle('expanded', isCollapsed);
+      headerDiv.classList.toggle('collapsed', !isCollapsed);
+      
+      // Update icon
+      const icon = headerDiv.querySelector('.toggle-icon');
+      icon.textContent = isCollapsed ? '▲' : '▼';
+    });
+    
+    // Buat row container untuk div kelompok
+    const row = document.createElement('tr');
+    const cell = document.createElement('td');
+    cell.colSpan = 1;
+    cell.style.padding = '0';
+    cell.appendChild(groupDiv);
+    row.appendChild(cell);
+    tbody.appendChild(row);
+  });
+}
 
     setInterval(checkSession, 5 * 60 * 1000);
   </script>
