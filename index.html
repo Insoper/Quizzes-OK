@@ -683,22 +683,32 @@
         return;
       }
       
+      const now = new Date();
+      let hasActiveClasses = false;
+      
       activeClasses.forEach(cls => {
-        const row = document.createElement('tr');
         const startTime = cls.WaktuMulai ? new Date(cls.WaktuMulai) : null;
         const endTime = cls.WaktuBerakhir ? new Date(cls.WaktuBerakhir) : null;
         
-        row.innerHTML = `
-          <td>${cls.KodeKelas || '-'}</td>
-          <td>${cls.Kategori || '-'}</td>
-          <td>${cls.Durasi ? cls.Durasi + ' menit' : '-'}</td>
-          <td>${startTime ? formatDateTime(startTime) : '-'}</td>
-          <td>${endTime ? formatDateTime(endTime) : '-'}</td>
-          <td>${cls.Instruktur || '-'}</td>
-        `;
-        
-        tbody.appendChild(row);
+        // Only show classes that are currently active (now is between start and end time)
+        if (startTime && endTime && now >= startTime && now <= endTime) {
+          hasActiveClasses = true;
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td>${cls.KodeKelas || '-'}</td>
+            <td>${cls.Kategori || '-'}</td>
+            <td>${cls.Durasi ? cls.Durasi + ' menit' : '-'}</td>
+            <td>${formatDateTime(startTime)}</td>
+            <td>${formatDateTime(endTime)}</td>
+            <td>${cls.Instruktur || '-'}</td>
+          `;
+          tbody.appendChild(row);
+        }
       });
+      
+      if (!hasActiveClasses) {
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center">Tidak ada quiz yang sedang berlangsung saat ini</td></tr>';
+      }
     }
 
     function formatDateTime(date) {
