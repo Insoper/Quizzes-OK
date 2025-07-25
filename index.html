@@ -627,6 +627,7 @@
         let groupedResults = {}; // Hasil yang dikelompokkan berdasarkan kategori, kode kelas + timestamp
         let currentSelectedCategory = null;
         let currentSelectedQuizGroupData = null; // Ini akan berisi array hasil untuk quiz group yang dipilih
+        let isCreatingQuiz = false; // Flag untuk mencegah multiple clicks saat membuat quiz
 
         // Initialize when DOM is ready
         document.addEventListener('DOMContentLoaded', () => {
@@ -719,9 +720,6 @@
         }
 
         function setupInstructorPanel() {
-            // Hapus event listener sebelumnya jika ada
-            document.getElementById('create-quiz-form').removeEventListener('submit', handleQuizSubmit);
-            // Tambahkan event listener baru
             document.getElementById('create-quiz-form').addEventListener('submit', handleQuizSubmit);
 
             document.querySelectorAll('[data-bs-toggle="tab"]').forEach(tab => {
@@ -729,7 +727,7 @@
                     if (event.target.id === 'active-tab') {
                         loadActiveClasses();
                     } else if (event.target.id === 'results-tab') {
-                        loadAllResults(); // Memuat semua hasil saat tab dibuka
+                        loadAllResults();
                     }
                 });
             });
@@ -737,13 +735,11 @@
             loadCategories();
             loadActiveClasses();
 
-            // Tambahkan event listener untuk resize di sini
             window.addEventListener('resize', function() {
                 if (document.getElementById('active-tab').classList.contains('active')) {
                     renderActiveClassesTable();
                 }
                 if (document.getElementById('results-tab').classList.contains('active')) {
-                    // Cukup panggil ulang renderResultsTable jika sudah ada data yang dipilih
                     if (currentSelectedQuizGroupData) {
                         renderResultsTable(currentSelectedQuizGroupData);
                     }
@@ -751,7 +747,6 @@
             });
         }
 
-        // Fungsi terpisah untuk handle submit quiz
         function handleQuizSubmit(e) {
             e.preventDefault();
             e.stopPropagation();
@@ -830,7 +825,6 @@
 
                 if (data.status === 'success' && data.data && data.data.length > 0) {
                     const select = document.getElementById('quiz-categories');
-                    // Removed filter-category select as it's no longer needed
                     select.innerHTML = '';
 
                     const uniqueCategories = [...new Set(data.data)];
@@ -951,15 +945,12 @@
 
         function formatDate(date) {
             if (!date) return '-';
-            // Use 'long' for month to show "Juli"
             return date.toLocaleString('id-ID', {
                 day: 'numeric',
                 month: 'long', 
                 year: 'numeric'
             });
         }
-
-        // --- New Results Display Logic ---
 
         async function loadAllResults() {
             const loadingIndicator = document.getElementById('results-loading-indicator');
@@ -975,14 +966,14 @@
             tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">Pilih kategori dan quiz untuk melihat hasil</td></tr>';
             
             currentSelectedCategory = null;
-            currentSelectedQuizGroupData = null; // Reset this when loading all results
+            currentSelectedQuizGroupData = null;
 
             try {
                 const response = await fetch(`${WEB_APP_URL}?action=getResults`);
                 const data = await response.json();
 
                 if (data.status === 'success') {
-                    allResultsData = data.data; // Simpan semua data mentah
+                    allResultsData = data.data;
                     groupResultsByCategoryAndClass();
                     renderCategoryList();
                 } else {
@@ -1002,12 +993,11 @@
         }
 
         function groupResultsByCategoryAndClass() {
-            groupedResults = {}; // Reset groupedResults
+            groupedResults = {};
             allResultsData.forEach(result => {
                 const category = result.Kategori || 'Tidak Berkategori';
                 const classCode = result.KodeKelas || 'Tidak Ada Kode';
                 
-                // Get the timestamp for the class, prefer TimestampKelas, fallback to Timestamp
                 let rawClassTimestamp = result.TimestampKelas;
                 if (!rawClassTimestamp || isNaN(new Date(rawClassTimestamp))) {
                     rawClassTimestamp = result.Timestamp;
@@ -1019,29 +1009,22 @@
                 }
 
                 const dateObj = new Date(rawClassTimestamp);
-                // Normalize date to the start of the day (midnight UTC) to group by date only
                 const normalizedDate = new Date(Date.UTC(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate()));
                 
-                // Create a unique ID for the quiz instance based on code and its normalized date (YYYY-MM-DD)
                 const quizGroupId = `${classCode}::${normalizedDate.toISOString().split('T')[0]}`; 
-                // Using toISOString().split('T')[0] gives "YYYY-MM-DD" string
-
-                // For display, format the date nicely from the original (or fallback) timestamp
-                const formattedQuizDate = formatDate(dateObj); // Use the original dateObj for display formatting
+                const formattedQuizDate = formatDate(dateObj);
                 const quizDisplayName = `${classCode} (${formattedQuizDate})`;
 
                 if (!groupedResults[category]) {
                     groupedResults[category] = {};
                 }
                 
-                // If this quizGroupId doesn't exist yet, initialize it
                 if (!groupedResults[category][quizGroupId]) {
                     groupedResults[category][quizGroupId] = {
-                        display: quizDisplayName, // Display name for the list item
-                        data: [] // Array to store all raw results belonging to this unique quiz instance
+                        display: quizDisplayName,
+                        data: []
                     };
                 }
-                // Add the current result to this quiz group's data array
                 groupedResults[category][quizGroupId].data.push(result);
             });
         }
@@ -1069,16 +1052,14 @@
                 ul.appendChild(li);
             });
             categoryListDiv.appendChild(ul);
-            // Ensure these are hidden on initial category list render
             document.getElementById('results-quiz-group-list').classList.add('d-none');
             document.getElementById('results-display-area').classList.add('d-none');
         }
 
         function selectCategory(category) {
             currentSelectedCategory = category;
-            currentSelectedQuizGroupData = null; // Reset selected quiz group data
+            currentSelectedQuizGroupData = null;
 
-            // Update active state for category items
             document.querySelectorAll('.category-item').forEach(item => {
                 item.classList.remove('active');
                 if (item.dataset.category === category) {
@@ -1086,28 +1067,23 @@
                 }
             });
 
-            // Render and make the quiz group list visible first
             renderQuizGroupList(category);
 
             const quizGroups = groupedResults[category];
             const sortedQuizGroupKeys = Object.keys(quizGroups || {}).sort((a, b) => {
                 const dateA = new Date(a.split('::')[1]);
                 const dateB = new Date(b.split('::')[1]);
-                return dateB - dateA; // Descending order (newest first)
+                return dateB - dateA;
             });
 
             if (sortedQuizGroupKeys.length === 1) {
-                // If there's only one quiz group, automatically select it
                 selectQuizGroup(sortedQuizGroupKeys[0]);
-                // No need to hide results-display-area here, selectQuizGroup will handle it being shown
             } else {
-                // If multiple or no quiz groups, ensure results area is hidden and show appropriate message
                 document.getElementById('results-display-area').classList.add('d-none');
                 document.querySelector('#results-table-main tbody').innerHTML = '<tr><td colspan="5" class="text-center text-muted">Pilih quiz di bawah untuk melihat hasil</td></tr>';
             }
         }
 
-        // Updated renderQuizGroupList to prevent flicker and handle empty state better
         function renderQuizGroupList(category) {
             const quizGroupListDiv = document.getElementById('results-quiz-group-list');
             
@@ -1116,38 +1092,34 @@
             ul.classList.add('quiz-group-list');
 
             const sortedQuizGroupKeys = Object.keys(quizGroups || {}).sort((a, b) => {
-                // 'a' and 'b' are quizGroupIds like "CODE::YYYY-MM-DD"
                 const dateA = new Date(a.split('::')[1]);
                 const dateB = new Date(b.split('::')[1]);
-                return dateB - dateA; // Descending order (newest first)
+                return dateB - dateA;
             });
 
             if (!quizGroups || sortedQuizGroupKeys.length === 0) {
                 ul.innerHTML = '<p class="text-center text-muted">Tidak ada quiz dalam kategori ini.</p>';
             } else {
                 sortedQuizGroupKeys.forEach(quizGroupId => {
-                    const quizGroupInfo = quizGroups[quizGroupId]; // Get the object containing 'display' and 'data'
+                    const quizGroupInfo = quizGroups[quizGroupId];
                     
                     const li = document.createElement('li');
                     li.classList.add('quiz-group-item');
-                    li.textContent = quizGroupInfo.display; // Use the pre-formatted display text
+                    li.textContent = quizGroupInfo.display;
                     li.dataset.quizGroupId = quizGroupId;
                     li.addEventListener('click', () => selectQuizGroup(quizGroupId));
                     ul.appendChild(li);
                 });
             }
             
-            // Replace content and make visible in one go
-            quizGroupListDiv.innerHTML = ''; // Clear existing content
+            quizGroupListDiv.innerHTML = '';
             quizGroupListDiv.appendChild(ul);
-            quizGroupListDiv.classList.remove('d-none'); // Make visible after content is ready
+            quizGroupListDiv.classList.remove('d-none');
         }
 
         function selectQuizGroup(quizGroupId) {
-            // Get the actual data array for the selected quiz group
             currentSelectedQuizGroupData = groupedResults[currentSelectedCategory][quizGroupId].data;
 
-            // Update active state for quiz group items
             document.querySelectorAll('.quiz-group-item').forEach(item => {
                 item.classList.remove('active');
                 if (item.dataset.quizGroupId === quizGroupId) {
@@ -1155,46 +1127,42 @@
                 }
             });
 
-            // Set the title for the results display area
             const quizGroupInfo = groupedResults[currentSelectedCategory][quizGroupId];
             document.getElementById('current-quiz-group-title').textContent = `Hasil untuk Quiz: ${quizGroupInfo.display}`;
 
             document.getElementById('results-display-area').classList.remove('d-none');
-            renderResultsTable(currentSelectedQuizGroupData); // Pass the entire data array for this group
+            renderResultsTable(currentSelectedQuizGroupData);
         }
 
         function renderResultsTable(resultsArray) {
             const tbody = document.querySelector('#results-table-main tbody');
             if (!tbody) return;
 
-            tbody.innerHTML = ''; // Kosongkan tabel
+            tbody.innerHTML = '';
 
             if (!resultsArray || resultsArray.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">Tidak ada hasil quiz untuk grup ini</td></tr>';
                 return;
             }
 
-            // Group results by student name, get the HIGHEST score and its timestamp
             const summarizedResults = {};
             resultsArray.forEach(result => {
                 const studentName = result.NamaSiswa || 'Anonim';
                 const currentScore = parseInt(result.Skor) || 0;
-                const currentTimestamp = new Date(result.Timestamp); // Timestamp of this specific attempt
+                const currentTimestamp = new Date(result.Timestamp);
 
                 if (!summarizedResults[studentName]) {
                     summarizedResults[studentName] = {
                         NamaSiswa: studentName,
                         Skor: currentScore,
-                        Timestamp: result.Timestamp, // Store original string timestamp for comparison/display
+                        Timestamp: result.Timestamp,
                         KodeKelas: result.KodeKelas || '-'
                     };
                 } else {
-                    // If current score is higher, update
                     if (currentScore > summarizedResults[studentName].Skor) {
                         summarizedResults[studentName].Skor = currentScore;
                         summarizedResults[studentName].Timestamp = result.Timestamp;
                     } 
-                    // If scores are tied, use the latest timestamp
                     else if (currentScore === summarizedResults[studentName].Skor) {
                         const existingTimestamp = new Date(summarizedResults[studentName].Timestamp);
                         if (currentTimestamp > existingTimestamp) {
@@ -1204,9 +1172,7 @@
                 }
             });
 
-            // Convert summarizedResults object to an array for sorting
             const sortedSummarizedResults = Object.values(summarizedResults).sort((a, b) => {
-                // Sort by score (descending), then by timestamp (descending)
                 if (b.Skor !== a.Skor) {
                     return b.Skor - a.Skor;
                 }
@@ -1218,7 +1184,6 @@
                  return;
             }
 
-            // Render rows for the main table
             sortedSummarizedResults.forEach((result, index) => {
                 const row = document.createElement('tr');
                 const isMobile = window.innerWidth <= 768;
@@ -1247,12 +1212,10 @@
                 tbody.appendChild(row);
             });
 
-            // Add event listeners for student names to show modal
             tbody.querySelectorAll('.student-name').forEach(link => {
                 link.addEventListener('click', function(e) {
                     e.preventDefault();
                     const studentName = this.dataset.studentName;
-                    // Pass the entire currentSelectedQuizGroupData for the modal to filter against
                     showAllScoresModal(studentName, currentSelectedQuizGroupData);
                 });
             });
@@ -1263,13 +1226,11 @@
             const modalBody = document.getElementById('modalScoresBody');
 
             modalTitle.textContent = studentName;
-            modalBody.innerHTML = ''; // Clear previous data
+            modalBody.innerHTML = '';
 
-            // Filter scores specifically from the selected quiz group for the selected student
-            // This 'quizGroupResults' is already the filtered data for the selected quiz instance
             const studentScores = quizGroupResults
                 .filter(result => result.NamaSiswa === studentName)
-                .sort((a, b) => new Date(b.Timestamp) - new Date(a.Timestamp)); // Sort by latest timestamp
+                .sort((a, b) => new Date(b.Timestamp) - new Date(a.Timestamp));
 
             if (studentScores.length === 0) {
                 modalBody.innerHTML = '<tr><td colspan="4" class="text-center">Tidak ada data skor untuk siswa ini di quiz ini.</td></tr>';
@@ -1286,7 +1247,6 @@
                 });
             }
 
-            // Show the modal
             const allScoresModal = new bootstrap.Modal(document.getElementById('allScoresModal'));
             allScoresModal.show();
         }
