@@ -6,14 +6,21 @@
     <title>Quiz Interaktif</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        .login-container {
+        /* Base Styles */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: #f8f9fa;
-            height: 100vh;
+        }
+        
+        /* Login Page */
+        .login-container {
+            min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 20px;
         }
+        
         .login-card {
             width: 100%;
             max-width: 400px;
@@ -22,6 +29,7 @@
             box-shadow: 0 5px 15px rgba(0,0,0,0.1);
             background-color: white;
         }
+        
         .logo {
             text-align: center;
             margin-bottom: 1.5rem;
@@ -29,412 +37,191 @@
             font-size: 1.8rem;
             color: #0d6efd;
         }
-        .btn-login {
-            width: 100%;
-            padding: 10px;
+        
+        /* Instructor Panel */
+        .panel-container {
+            padding: 20px 0;
         }
-        body.panel-mode {
-            background-color: #f8f9fa;
-            padding-top: 20px;
-        }
+        
         .navbar-brand {
             font-weight: bold;
-            font-size: 1.5rem;
-        }
-        .quiz-card {
-            transition: transform 0.2s, box-shadow 0.2s;
-            margin-bottom: 20px;
-            border-radius: 8px;
-            overflow: hidden;
-            border: none;
-        }
-        .quiz-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
-        }
-        .timer-display {
             font-size: 1.2rem;
-            font-weight: bold;
-            color: #dc3545;
-            background-color: #f8d7da;
-            padding: 5px 10px;
-            border-radius: 4px;
-            display: inline-block;
         }
-        .tab-content {
-            padding: 20px 0;
-            background-color: white;
-            border-radius: 0 8px 8px 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        }
+        
+        /* Tabs */
         .nav-tabs {
             border-bottom: 2px solid #dee2e6;
         }
+        
         .nav-tabs .nav-link {
             border: none;
             color: #495057;
             font-weight: 500;
-            padding: 12px 20px;
+            padding: 12px;
             transition: all 0.3s;
         }
+        
         .nav-tabs .nav-link.active {
             color: #0d6efd;
-            background-color: white;
+            background-color: transparent;
             border-bottom: 3px solid #0d6efd;
         }
-        .nav-tabs .nav-link:hover:not(.active) {
-            border-bottom: 3px solid #dee2e6;
+        
+        .tab-content {
+            padding: 20px 0;
         }
-        .question-list {
-            max-height: 400px;
-            overflow-y: auto;
-            padding-right: 10px;
-        }
-        .result-item {
-            border-left: 4px solid #0d6efd;
-            margin-bottom: 15px;
-            padding: 15px;
-            background-color: white;
-            border-radius: 4px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        }
-        .result-item.correct {
-            border-left-color: #198754;
-            background-color: #f8f9fa;
-        }
-        .result-item.incorrect {
-            border-left-color: #dc3545;
-            background-color: #fff5f5;
-        }
-        .view-class-btn {
-            transition: all 0.2s;
-        }
-        .view-class-btn:hover {
-            background-color: #0b5ed7;
-            transform: translateY(-1px);
-        }
-        .modal {
-            z-index: 1060;
-        }
-        .modal-content {
+        
+        /* Cards */
+        .card {
             border: none;
             border-radius: 8px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
         }
-        .modal-header {
-            border-bottom: 1px solid #e9ecef;
-            padding: 1rem 1.5rem;
+        
+        .card-header {
+            background-color: white;
+            border-bottom: 1px solid #eee;
+            padding: 15px 20px;
         }
-        .modal-footer {
-            border-top: 1px solid #e9ecef;
-        }
-        #participants-table {
-            max-height: 300px;
-            overflow-y: auto;
-            display: block;
-        }
-        .class-body .table {
-            width: 100%;
-            margin-bottom: 1rem;
-            color: #212529;
-            vertical-align: top;
-            border-color: #dee2e6;
-            display: block;
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-        }
-        .loading-spinner {
-            display: inline-block;
-            width: 1rem;
-            height: 1rem;
-            vertical-align: text-bottom;
-            border: 0.25em solid currentColor;
-            border-right-color: transparent;
-            border-radius: 50%;
-            animation: spinner-border .75s linear infinite;
-        }
-        @keyframes spinner-border {
-            to { transform: rotate(360deg); }
-        }
-        .form-text {
-            color: #6c757d;
-            font-size: 0.875em;
-            margin-top: 0.25rem;
-        }
-        .text-danger {
-            color: #dc3545;
-        }
-        .text-success {
-            color: #198754;
-        }
-        .text-center {
-            text-align: center;
-        }
-        .d-none {
-            display: none;
-        }
-        .d-flex {
-            display: flex;
-        }
-        .align-items-center {
-            align-items: center;
-        }
-        .justify-content-center {
-            justify-content: center;
-        }
-        .me-2 {
-            margin-right: 0.5rem;
-        }
-        .mb-3 {
-            margin-bottom: 1rem;
-        }
-        .mb-4 {
-            margin-bottom: 1.5rem;
-        }
-        .rounded {
-            border-radius: 0.5rem;
-        }
-        .bg-primary {
-            background-color: #0d6efd;
-        }
-        .text-white {
-            color: white;
-        }
+        
+        /* Tables */
         .table-responsive {
             overflow-x: auto;
             -webkit-overflow-scrolling: touch;
         }
-
-        .class-group {
-            margin-bottom: 15px;
-            border: 1px solid #dee2e6;
+        
+        /* Results Section - Mobile First */
+        #results-display-area {
+            background: white;
             border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            padding: 15px;
+            margin-top: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
         }
-
-        .class-header {
-            background-color: #f8f9fa;
-            padding: 12px 15px;
-            cursor: pointer;
+        
+        .result-item {
+            display: flex;
+            flex-direction: column;
+            padding: 12px 0;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .result-item:last-child {
+            border-bottom: none;
+        }
+        
+        .result-row {
             display: flex;
             justify-content: space-between;
-            align-items: center;
-            font-weight: 500;
-            border-bottom: 1px solid #dee2e6;
+            margin-bottom: 5px;
         }
-
-        .class-header:hover {
-            background-color: #e9ecef;
+        
+        .result-label {
+            font-weight: 600;
+            color: #555;
+            flex: 1;
         }
-
-        .class-header .toggle-icon {
-            transition: transform 0.3s;
-            font-size: 0.8rem;
-            color: #6c757d;
+        
+        .result-value {
+            flex: 1;
+            text-align: right;
         }
-
-        .class-header.collapsed .toggle-icon {
-            transform: rotate(-90deg);
-        }
-
-        .class-body {
-            padding: 0;
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.3s ease-out;
-        }
-
-        .class-body.expanded {
-            max-height: 2000px; /* Disesuaikan untuk menampung lebih banyak data */
-        }
-
-        .class-summary {
-            padding: 10px 15px;
-            font-size: 0.85rem;
-            color: #6c757d;
-            border-bottom: 1px solid #dee2e6;
-        }
-
-        .class-summary span {
-            margin-right: 15px;
-        }
-
-        .class-summary strong {
-            color: #495057;
-        }
-
-        /* --- Custom CSS for Results Table --- */
-        #results-table-main {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 15px;
-        }
-        #results-table-main th, #results-table-main td {
-            padding: 10px 12px;
-            border: 1px solid #dee2e6;
-            text-align: left;
-        }
-        #results-table-main th {
-            background-color: #f8f9fa;
-            font-weight: bold;
-        }
-        #results-table-main tbody tr:hover {
-            background-color: #f0f0f0;
-        }
-        #results-table-main .student-name {
-            cursor: pointer;
+        
+        .student-name {
             color: #0d6efd;
+            text-decoration: none;
             font-weight: 500;
+            word-break: break-word;
         }
-        #results-table-main .student-name:hover {
-            text-decoration: underline;
-        }
-
-        /* Modal for All Scores */
-        .all-scores-modal .modal-body {
-            max-height: 400px;
-            overflow-y: auto;
-        }
-        .all-scores-modal .table {
-            margin-bottom: 0;
-        }
-
-        /* Results categories and quiz list styling */
+        
+        /* Category List */
         .category-list, .quiz-group-list {
             list-style: none;
             padding: 0;
-            margin-top: 15px;
+            margin: 0;
         }
+        
         .category-item, .quiz-group-item {
-            background-color: #e9f5ff; /* Lighter primary color */
+            padding: 14px 16px;
             margin-bottom: 8px;
-            padding: 12px 15px;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: background-color 0.2s, transform 0.1s;
-            font-weight: 500;
+            border-radius: 8px;
+            background: #f5f9ff;
             color: #0d6efd;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            font-weight: 500;
+            transition: all 0.2s;
+            cursor: pointer;
         }
-        .category-item:hover, .quiz-group-item:hover {
-            background-color: #d1ecfd; /* Slightly darker on hover */
-            transform: translateY(-2px);
-        }
+        
         .category-item.active, .quiz-group-item.active {
-            background-color: #0d6efd;
+            background: #0d6efd;
             color: white;
         }
+        
         .quiz-group-item {
-            background-color: #f0f8ff; /* Even lighter for sub-items */
-            margin-left: 20px;
-            font-size: 0.95em;
-            color: #333;
+            background: #f0f7ff;
+            color: #0066cc;
         }
-        .quiz-group-item:hover {
-            background-color: #e0f2ff;
+        
+        /* Loading Indicator */
+        .loading-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
         }
-        .quiz-group-item.active {
-            background-color: #0d6efd;
-            color: white;
+        
+        .loading-spinner {
+            display: inline-block;
+            width: 1rem;
+            height: 1rem;
+            border: 0.25em solid currentColor;
+            border-right-color: transparent;
+            border-radius: 50%;
+            animation: spinner-border .75s linear infinite;
+            margin-right: 8px;
         }
-
-        #results-display-area {
-            margin-top: 20px;
-            padding-top: 20px;
-            border-top: 1px solid #dee2e6;
+        
+        @keyframes spinner-border {
+            to { transform: rotate(360deg); }
         }
-        #results-display-area.d-none {
-            display: none !important;
+        
+        /* Modal */
+        .modal-content {
+            border: none;
+            border-radius: 10px;
         }
-        #results-table-main {
-            margin-top: 0; /* Reset margin as it's inside a new container */
-        }
-
-        /* Responsive Design for ALL Tables */
-        @media (max-width: 768px) {
-            #active-quiz-table, .class-group .table, #results-table-main {
-                display: block;
-                width: 100%;
-                overflow-x: auto;
-                -webkit-overflow-scrolling: touch;
-                border: none; /* Remove table border for better card view */
-            }
-
-            #active-quiz-table thead, .class-group thead, #results-table-main thead {
-                display: none;
-            }
-
-            #active-quiz-table tbody, .class-group tbody, #results-table-main tbody {
-                display: block;
-                width: 100%;
-            }
-
-            #active-quiz-table tr, .class-group tr, #results-table-main tr {
-                display: block;
-                margin-bottom: 15px;
-                border: 1px solid #dee2e6;
-                border-radius: 8px;
-                background-color: white;
-                box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            }
-
-            #active-quiz-table td, .class-group td, #results-table-main td {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                padding: 10px 15px;
-                border: none;
-                border-bottom: 1px solid #eee;
-            }
-
-            #active-quiz-table td:before, .class-group td:before, #results-table-main td:before {
-                content: attr(data-label);
-                font-weight: bold;
-                margin-right: 10px;
-                color: #495057;
-                flex: 1;
-                text-align: left;
-            }
-
-            #active-quiz-table td:last-child, .class-group td:last-child, #results-table-main td:last-child {
-                border-bottom: none;
-            }
-
-            #active-quiz-table td span, .class-group td span, #results-table-main td span {
-                flex: 2;
-                text-align: right;
+        
+        /* Desktop Styles */
+        @media (min-width: 768px) {
+            .navbar-brand {
+                font-size: 1.5rem;
             }
             
-            /* Adjustments for class-group headers on mobile */
-            .class-header {
-                flex-direction: column;
-                align-items: flex-start;
-                padding: 10px 15px;
+            #results-table-main {
+                width: 100%;
+                border-collapse: collapse;
             }
-
-            .class-header div:first-child {
-                margin-bottom: 5px;
+            
+            #results-table-main th {
+                background-color: #f8f9fa;
+                padding: 12px 15px;
+                text-align: left;
             }
-
-            .class-header .toggle-icon {
-                margin-top: 5px;
+            
+            #results-table-main td {
+                padding: 12px 15px;
+                border-bottom: 1px solid #eee;
             }
-
-            .class-summary {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-            .class-summary span {
-                margin-right: 0;
-                margin-bottom: 5px;
+            
+            #results-table-main tr:hover {
+                background-color: #f8f9fa;
             }
         }
     </style>
 </head>
 <body>
+    <!-- Login Page -->
     <div id="loginPage" class="login-container">
         <div class="login-card">
             <div class="logo">Quiz Interaktif</div>
@@ -447,12 +234,13 @@
                     <label for="password" class="form-label">Password</label>
                     <input type="password" class="form-control" id="password" required>
                 </div>
-                <button type="submit" class="btn btn-primary btn-login">Masuk</button>
+                <button type="submit" class="btn btn-primary w-100">Masuk</button>
             </form>
         </div>
     </div>
 
-    <div id="instructorPanel" class="container" style="display:none;">
+    <!-- Instructor Panel -->
+    <div id="instructorPanel" class="panel-container container" style="display:none;">
         <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4 rounded">
             <div class="container-fluid">
                 <a class="navbar-brand" href="#">Quiz Interaktif</a>
@@ -476,6 +264,7 @@
         </ul>
 
         <div class="tab-content" id="instructorTabContent">
+            <!-- Create Quiz Tab -->
             <div class="tab-pane fade show active" id="create" role="tabpanel">
                 <div class="card">
                     <div class="card-header">
@@ -485,11 +274,9 @@
                         <form id="create-quiz-form" autocomplete="off">
                             <div class="mb-3">
                                 <label for="quiz-categories" class="form-label">Pilih Kategori</label>
-                                <select multiple class="form-select" id="quiz-categories" required>
-                                    </select>
+                                <select multiple class="form-select" id="quiz-categories" required></select>
                                 <div class="form-text">Gunakan Ctrl+Klik untuk memilih banyak kategori</div>
                             </div>
-
                             <div class="mb-3">
                                 <label for="quiz-duration" class="form-label">Durasi Quiz</label>
                                 <select class="form-select" id="quiz-duration" required>
@@ -500,12 +287,10 @@
                                     <option value="1440">24 jam</option>
                                 </select>
                             </div>
-
                             <div class="mb-3">
                                 <label for="instructor-name-input" class="form-label">Nama Instruktur</label>
                                 <input type="text" class="form-control" id="instructor-name-input" required>
                             </div>
-
                             <button type="submit" class="btn btn-primary" id="create-quiz-btn">
                                 <span id="create-quiz-text">Buat Quiz</span>
                                 <span id="create-quiz-spinner" class="loading-spinner d-none"></span>
@@ -515,6 +300,7 @@
                 </div>
             </div>
 
+            <!-- Active Quiz Tab -->
             <div class="tab-pane fade" id="active" role="tabpanel">
                 <div class="card">
                     <div class="card-header">
@@ -535,7 +321,7 @@
                                 </thead>
                                 <tbody>
                                     <tr>
-                                        <td colspan="7" class="text-center"><span class="loading-spinner me-2"></span>Memuat data quiz...</td>
+                                        <td colspan="6" class="text-center"><span class="loading-spinner me-2"></span>Memuat data quiz...</td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -544,39 +330,51 @@
                 </div>
             </div>
 
+            <!-- Results Tab - Mobile Optimized -->
             <div class="tab-pane fade" id="results" role="tabpanel">
                 <div class="card">
                     <div class="card-header">
                         <h5 class="mb-0">Hasil Quiz</h5>
                     </div>
                     <div class="card-body">
-                        <div id="results-loading-indicator" class="text-center text-muted">
-                            <span class="loading-spinner me-2"></span>Memuat hasil quiz...
+                        <div id="results-loading-indicator" class="loading-container text-muted">
+                            <span class="loading-spinner"></span>Memuat hasil quiz...
                         </div>
-                        <div id="results-category-list">
-                            </div>
-                        <div id="results-quiz-group-list" class="d-none">
-                            </div>
+                        
+                        <!-- Category Selection -->
+                        <div id="results-category-list"></div>
+                        
+                        <!-- Quiz Group Selection -->
+                        <div id="results-quiz-group-list" class="d-none"></div>
+                        
+                        <!-- Results Display Area -->
                         <div id="results-display-area" class="d-none">
                             <h6 id="current-quiz-group-title" class="mb-3"></h6>
-                            <div class="table-responsive">
-                                <table class="table table-striped table-hover" id="results-table-main">
-                                    <thead>
-                                        <tr>
-                                            <th>No</th>
-                                            <th>Nama Siswa</th>
-                                            <th>Skor</th>
-                                            <th>Timestamp Terakhir</th>
-                                            <th>Kelas</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr>
-                                            <td colspan="5" class="text-center text-muted">Pilih kategori dan quiz untuk melihat hasil</td>
-                                        </tr>
-                                    </tbody>
-                                </table>
+                            
+                            <!-- Desktop Table -->
+                            <div class="d-none d-md-block">
+                                <div class="table-responsive">
+                                    <table class="table table-striped" id="results-table-main">
+                                        <thead>
+                                            <tr>
+                                                <th>No</th>
+                                                <th>Nama Siswa</th>
+                                                <th>Skor</th>
+                                                <th>Terakhir Update</th>
+                                                <th>Kelas</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td colspan="5" class="text-center text-muted">Pilih kategori dan quiz untuk melihat hasil</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
+                            
+                            <!-- Mobile List -->
+                            <div class="d-md-none" id="mobile-results-list"></div>
                         </div>
                     </div>
                 </div>
@@ -584,7 +382,8 @@
         </div>
     </div>
 
-    <div class="modal fade all-scores-modal" id="allScoresModal" tabindex="-1" aria-labelledby="allScoresModalLabel" aria-hidden="true">
+    <!-- All Scores Modal -->
+    <div class="modal fade" id="allScoresModal" tabindex="-1" aria-labelledby="allScoresModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
@@ -592,20 +391,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <div class="table-responsive">
-                        <table class="table table-sm table-striped">
-                            <thead>
-                                <tr>
-                                    <th>No</th>
-                                    <th>Skor</th>
-                                    <th>Timestamp</th>
-                                    <th>Kelas</th>
-                                </tr>
-                            </thead>
-                            <tbody id="modalScoresBody">
-                                </tbody>
-                        </table>
-                    </div>
+                    <div id="modal-scores-container"></div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
@@ -618,16 +404,16 @@
     <script>
         // Configuration
         const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxmYIGtbDeuJZBuYnzkmzzBnT7M0yoEc-tl2aHaCR677X0XChG24I8BC8YQjN2nyIW2oA/exec';
-        const SESSION_DURATION = 12 * 60 * 60 * 1000; // 12 jam dalam milidetik
+        const SESSION_DURATION = 12 * 60 * 60 * 1000; // 12 hours
 
         // Global variables
         let currentInstructor = '';
         let activeClasses = [];
-        let allResultsData = []; // Data mentah SEMUA hasil dari sheet
-        let groupedResults = {}; // Hasil yang dikelompokkan berdasarkan kategori, kode kelas + timestamp
+        let allResultsData = [];
+        let groupedResults = {};
         let currentSelectedCategory = null;
-        let currentSelectedQuizGroupData = null; // Ini akan berisi array hasil untuk quiz group yang dipilih
-        let isCreatingQuiz = false; // Flag untuk mencegah multiple clicks saat membuat quiz
+        let currentSelectedQuizGroupData = null;
+        let isCreatingQuiz = false;
 
         // Initialize when DOM is ready
         document.addEventListener('DOMContentLoaded', () => {
@@ -636,11 +422,10 @@
                 window.addEventListener('load', () => {
                     navigator.serviceWorker.register('sw.js')
                         .then(registration => {
-                            console.log('✅ ServiceWorker berhasil didaftarkan dengan scope:', registration.scope);
+                            console.log('ServiceWorker registered with scope:', registration.scope);
                         })
                         .catch(error => {
-                            console.error('❌ Gagal mendaftarkan ServiceWorker:', error);
-                            alert('Fitur offline tidak tersedia: ' + error.message);
+                            console.error('Failed to register ServiceWorker:', error);
                         });
                 });
             }
@@ -669,6 +454,7 @@
 
         // Set up all event listeners
         function setupEventListeners() {
+            // Login form
             document.getElementById('loginForm').addEventListener('submit', function(e) {
                 e.preventDefault();
                 const username = document.getElementById('username').value.trim();
@@ -681,15 +467,29 @@
                 }
             });
 
+            // Logout button
             document.getElementById('logout-btn').addEventListener('click', function() {
                 localStorage.removeItem('quizSession');
                 showLoginPage();
                 document.getElementById('loginForm').reset();
             });
 
-            if (document.getElementById('instructorPanel').style.display === 'block') {
-                setupInstructorPanel();
-            }
+            // Tab switching
+            document.querySelectorAll('[data-bs-toggle="tab"]').forEach(tab => {
+                tab.addEventListener('shown.bs.tab', function(event) {
+                    if (event.target.id === 'active-tab') {
+                        loadActiveClasses();
+                    } else if (event.target.id === 'results-tab') {
+                        loadAllResults();
+                    }
+                });
+            });
+
+            // Quiz creation form
+            document.getElementById('create-quiz-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                createNewQuiz();
+            });
         }
 
         function handleSuccessfulLogin(username) {
@@ -704,57 +504,22 @@
             document.getElementById('instructor-name-input').value = username;
 
             showInstructorPanel();
-            setupInstructorPanel();
+            loadCategories();
+            loadActiveClasses();
         }
 
         function showLoginPage() {
             document.getElementById('loginPage').style.display = 'flex';
             document.getElementById('instructorPanel').style.display = 'none';
-            document.body.classList.remove('panel-mode');
         }
 
         function showInstructorPanel() {
             document.getElementById('loginPage').style.display = 'none';
             document.getElementById('instructorPanel').style.display = 'block';
-            document.body.classList.add('panel-mode');
         }
 
-        function setupInstructorPanel() {
-            document.getElementById('create-quiz-form').addEventListener('submit', handleQuizSubmit);
-
-            document.querySelectorAll('[data-bs-toggle="tab"]').forEach(tab => {
-                tab.addEventListener('shown.bs.tab', function(event) {
-                    if (event.target.id === 'active-tab') {
-                        loadActiveClasses();
-                    } else if (event.target.id === 'results-tab') {
-                        loadAllResults();
-                    }
-                });
-            });
-
-            loadCategories();
-            loadActiveClasses();
-
-            window.addEventListener('resize', function() {
-                if (document.getElementById('active-tab').classList.contains('active')) {
-                    renderActiveClassesTable();
-                }
-                if (document.getElementById('results-tab').classList.contains('active')) {
-                    if (currentSelectedQuizGroupData) {
-                        renderResultsTable(currentSelectedQuizGroupData);
-                    }
-                }
-            });
-        }
-
-        function handleQuizSubmit(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            createNewQuiz();
-        }
-
+        /* ========== QUIZ CREATION FUNCTIONS ========== */
         async function createNewQuiz() {
-            // Cek jika proses sedang berjalan
             if (isCreatingQuiz) return;
             isCreatingQuiz = true;
 
@@ -765,15 +530,8 @@
             const duration = document.getElementById('quiz-duration').value;
             const instructor = document.getElementById('instructor-name-input').value.trim();
 
-            if (!instructor) {
-                alert('Nama instruktur harus diisi');
-                isCreatingQuiz = false;
-                return;
-            }
-
-            if (!categories) {
-                alert('Pilih minimal satu kategori');
-                isCreatingQuiz = false;
+            if (!instructor || !categories) {
+                alert(isCreatingQuiz = false);
                 return;
             }
 
@@ -786,18 +544,14 @@
             createSpinner.classList.remove('d-none');
 
             try {
-                const questionsResponse = await fetch(`${WEB_APP_URL}?action=getQuestions&categories=${encodeURIComponent(categories)}`, {
-                    cache: 'no-store'
-                });
+                const questionsResponse = await fetch(`${WEB_APP_URL}?action=getQuestions&categories=${encodeURIComponent(categories)}`);
                 const questionsData = await questionsResponse.json();
 
                 if (questionsData.status !== 'success' || !questionsData.data || questionsData.data.length === 0) {
                     throw new Error('Tidak ada soal untuk kategori yang dipilih');
                 }
 
-                const response = await fetch(`${WEB_APP_URL}?action=createClass&categories=${encodeURIComponent(categories)}&duration=${duration}&instructor=${encodeURIComponent(instructor)}`, {
-                    cache: 'no-store'
-                });
+                const response = await fetch(`${WEB_APP_URL}?action=createClass&categories=${encodeURIComponent(categories)}&duration=${duration}&instructor=${encodeURIComponent(instructor)}`);
                 const data = await response.json();
 
                 if (data.status === 'success') {
@@ -823,10 +577,10 @@
                 const response = await fetch(`${WEB_APP_URL}?action=getCategories`);
                 const data = await response.json();
 
-                if (data.status === 'success' && data.data && data.data.length > 0) {
-                    const select = document.getElementById('quiz-categories');
-                    select.innerHTML = '';
+                const select = document.getElementById('quiz-categories');
+                select.innerHTML = '';
 
+                if (data.status === 'success' && data.data && data.data.length > 0) {
                     const uniqueCategories = [...new Set(data.data)];
                     uniqueCategories.forEach(category => {
                         if (category) {
@@ -837,25 +591,21 @@
                         }
                     });
                 } else {
-                    console.error('Data kategori kosong atau format tidak valid');
-                    const select = document.getElementById('quiz-categories');
                     select.innerHTML = '<option value="" disabled>Belum ada kategori</option>';
                 }
             } catch (error) {
                 console.error('Gagal memuat kategori:', error);
-                const select = document.getElementById('quiz-categories');
-                select.innerHTML = '<option value="" disabled>Gagal memuat kategori</option>';
+                document.getElementById('quiz-categories').innerHTML = '<option value="" disabled>Gagal memuat kategori</option>';
             }
         }
 
+        /* ========== ACTIVE QUIZ FUNCTIONS ========== */
         async function loadActiveClasses() {
             try {
                 const tbody = document.querySelector('#active-quiz-table tbody');
-                tbody.innerHTML = '<tr><td colspan="7" class="text-center"><span class="loading-spinner me-2"></span>Memuat data quiz...</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center"><span class="loading-spinner me-2"></span>Memuat data quiz...</td></tr>';
 
                 const response = await fetch(`${WEB_APP_URL}?action=getActiveClasses`);
-                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-
                 const data = await response.json();
 
                 if (data.status === 'success') {
@@ -869,7 +619,7 @@
                 const tbody = document.querySelector('#active-quiz-table tbody');
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="7" class="text-center text-danger">
+                        <td colspan="6" class="text-center text-danger">
                             ${error.message || 'Gagal memuat data quiz'}
                             <button class="btn btn-sm btn-outline-primary mt-2" onclick="loadActiveClasses()">
                                 Coba Lagi
@@ -882,8 +632,6 @@
 
         function renderActiveClassesTable() {
             const tbody = document.querySelector('#active-quiz-table tbody');
-            if (!tbody) return;
-
             tbody.innerHTML = '';
 
             if (activeClasses.length === 0) {
@@ -893,7 +641,6 @@
 
             const now = new Date();
             let hasActiveClasses = false;
-            const isMobile = window.innerWidth <= 768;
 
             activeClasses.forEach(cls => {
                 const startTime = cls.WaktuMulai ? new Date(cls.WaktuMulai) : null;
@@ -902,17 +649,19 @@
                 if (startTime && endTime && now >= startTime && now <= endTime) {
                     hasActiveClasses = true;
                     const row = document.createElement('tr');
-
-                    if (isMobile) {
+                    
+                    if (window.innerWidth <= 768) {
+                        // Mobile layout
                         row.innerHTML = `
                             <td data-label="Kode">${cls.KodeKelas || '-'}</td>
                             <td data-label="Kategori">${cls.Kategori || '-'}</td>
                             <td data-label="Durasi">${cls.Durasi ? cls.Durasi + ' menit' : '-'}</td>
-                            <td data-label="Mulai">${formatDateTime(startTime)}</td>
-                            <td data-label="Berakhir">${formatDateTime(endTime)}</td>
+                            <td data-label="Mulai">${formatDateTime(startTime, true)}</td>
+                            <td data-label="Berakhir">${formatDateTime(endTime, true)}</td>
                             <td data-label="Instruktur">${cls.Instruktur || '-'}</td>
                         `;
                     } else {
+                        // Desktop layout
                         row.innerHTML = `
                             <td>${cls.KodeKelas || '-'}</td>
                             <td>${cls.Kategori || '-'}</td>
@@ -922,7 +671,7 @@
                             <td>${cls.Instruktur || '-'}</td>
                         `;
                     }
-
+                    
                     tbody.appendChild(row);
                 }
             });
@@ -932,38 +681,17 @@
             }
         }
 
-        function formatDateTime(date) {
-            if (!date) return '-';
-            return date.toLocaleString('id-ID', {
-                day: 'numeric',
-                month: 'numeric',
-                year: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-            });
-        }
-
-        function formatDate(date) {
-            if (!date) return '-';
-            return date.toLocaleString('id-ID', {
-                day: 'numeric',
-                month: 'long', 
-                year: 'numeric'
-            });
-        }
-
+        /* ========== RESULTS FUNCTIONS ========== */
         async function loadAllResults() {
             const loadingIndicator = document.getElementById('results-loading-indicator');
             const categoryListDiv = document.getElementById('results-category-list');
             const quizGroupListDiv = document.getElementById('results-quiz-group-list');
             const resultsDisplayArea = document.getElementById('results-display-area');
-            const tbody = document.querySelector('#results-table-main tbody');
 
             loadingIndicator.classList.remove('d-none');
             categoryListDiv.innerHTML = '';
             quizGroupListDiv.innerHTML = '';
             resultsDisplayArea.classList.add('d-none');
-            tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">Pilih kategori dan quiz untuk melihat hasil</td></tr>';
             
             currentSelectedCategory = null;
             currentSelectedQuizGroupData = null;
@@ -998,13 +726,9 @@
                 const category = result.Kategori || 'Tidak Berkategori';
                 const classCode = result.KodeKelas || 'Tidak Ada Kode';
                 
-                let rawClassTimestamp = result.TimestampKelas;
+                let rawClassTimestamp = result.TimestampKelas || result.Timestamp;
                 if (!rawClassTimestamp || isNaN(new Date(rawClassTimestamp))) {
-                    rawClassTimestamp = result.Timestamp;
-                }
-                
-                if (!rawClassTimestamp || isNaN(new Date(rawClassTimestamp))) {
-                    console.warn(`Skipping result for student ${result.NamaSiswa} due to invalid or missing TimestampKelas/Timestamp.`);
+                    console.warn(`Skipping result for student ${result.NamaSiswa} - invalid timestamp`);
                     return;
                 }
 
@@ -1080,7 +804,6 @@
                 selectQuizGroup(sortedQuizGroupKeys[0]);
             } else {
                 document.getElementById('results-display-area').classList.add('d-none');
-                document.querySelector('#results-table-main tbody').innerHTML = '<tr><td colspan="5" class="text-center text-muted">Pilih quiz di bawah untuk melihat hasil</td></tr>';
             }
         }
 
@@ -1128,16 +851,77 @@
             });
 
             const quizGroupInfo = groupedResults[currentSelectedCategory][quizGroupId];
-            document.getElementById('current-quiz-group-title').textContent = `Hasil untuk Quiz: ${quizGroupInfo.display}`;
+            document.getElementById('current-quiz-group-title').textContent = `Hasil untuk: ${quizGroupInfo.display}`;
 
             document.getElementById('results-display-area').classList.remove('d-none');
-            renderResultsTable(currentSelectedQuizGroupData);
+            renderResults(currentSelectedQuizGroupData);
         }
 
-        function renderResultsTable(resultsArray) {
-            const tbody = document.querySelector('#results-table-main tbody');
-            if (!tbody) return;
+        function renderResults(resultsArray) {
+            if (window.innerWidth <= 768) {
+                renderMobileResults(resultsArray);
+            } else {
+                renderDesktopResults(resultsArray);
+            }
+        }
 
+        function renderMobileResults(resultsArray) {
+            const mobileList = document.getElementById('mobile-results-list');
+            mobileList.innerHTML = '';
+
+            if (!resultsArray || resultsArray.length === 0) {
+                mobileList.innerHTML = '<div class="text-center text-muted">Tidak ada hasil quiz untuk grup ini</div>';
+                return;
+            }
+
+            const summarizedResults = summarizeResults(resultsArray);
+
+            summarizedResults.forEach((result, index) => {
+                const item = document.createElement('div');
+                item.classList.add('result-item');
+                
+                item.innerHTML = `
+                    <div class="result-row">
+                        <span class="result-label">No</span>
+                        <span class="result-value">${index + 1}</span>
+                    </div>
+                    <div class="result-row">
+                        <span class="result-label">Nama</span>
+                        <span class="result-value">
+                            <a href="#" class="student-name" data-student-name="${result.NamaSiswa}">
+                                ${result.NamaSiswa}
+                            </a>
+                        </span>
+                    </div>
+                    <div class="result-row">
+                        <span class="result-label">Skor</span>
+                        <span class="result-value">${result.Skor}</span>
+                    </div>
+                    <div class="result-row">
+                        <span class="result-label">Update Terakhir</span>
+                        <span class="result-value">${formatDateTime(new Date(result.Timestamp), true)}</span>
+                    </div>
+                    <div class="result-row">
+                        <span class="result-label">Kelas</span>
+                        <span class="result-value">${result.KodeKelas}</span>
+                    </div>
+                `;
+                
+                mobileList.appendChild(item);
+            });
+
+            // Add click events for student names
+            mobileList.querySelectorAll('.student-name').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const studentName = this.dataset.studentName;
+                    showAllScoresModal(studentName, currentSelectedQuizGroupData);
+                });
+            });
+        }
+
+        function renderDesktopResults(resultsArray) {
+            const tbody = document.querySelector('#results-table-main tbody');
             tbody.innerHTML = '';
 
             if (!resultsArray || resultsArray.length === 0) {
@@ -1145,7 +929,37 @@
                 return;
             }
 
+            const summarizedResults = summarizeResults(resultsArray);
+
+            summarizedResults.forEach((result, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td>
+                        <a href="#" class="student-name" data-student-name="${result.NamaSiswa}">
+                            ${result.NamaSiswa}
+                        </a>
+                    </td>
+                    <td>${result.Skor}</td>
+                    <td>${formatDateTime(new Date(result.Timestamp))}</td>
+                    <td>${result.KodeKelas}</td>
+                `;
+                tbody.appendChild(row);
+            });
+
+            // Add click events for student names
+            tbody.querySelectorAll('.student-name').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const studentName = this.dataset.studentName;
+                    showAllScoresModal(studentName, currentSelectedQuizGroupData);
+                });
+            });
+        }
+
+        function summarizeResults(resultsArray) {
             const summarizedResults = {};
+            
             resultsArray.forEach(result => {
                 const studentName = result.NamaSiswa || 'Anonim';
                 const currentScore = parseInt(result.Skor) || 0;
@@ -1172,58 +986,17 @@
                 }
             });
 
-            const sortedSummarizedResults = Object.values(summarizedResults).sort((a, b) => {
+            return Object.values(summarizedResults).sort((a, b) => {
                 if (b.Skor !== a.Skor) {
                     return b.Skor - a.Skor;
                 }
                 return new Date(b.Timestamp) - new Date(a.Timestamp);
             });
-
-            if (sortedSummarizedResults.length === 0) {
-                 tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">Tidak ada hasil quiz yang sesuai filter</td></tr>';
-                 return;
-            }
-
-            sortedSummarizedResults.forEach((result, index) => {
-                const row = document.createElement('tr');
-                const isMobile = window.innerWidth <= 768;
-
-                if (isMobile) {
-                    row.innerHTML = `
-                        <td data-label="No">${index + 1}</td>
-                        <td data-label="Nama Siswa">
-                            <a href="#" class="student-name" data-student-name="${result.NamaSiswa}">${result.NamaSiswa}</a>
-                        </td>
-                        <td data-label="Skor">${result.Skor}</td>
-                        <td data-label="Timestamp Terakhir">${formatDateTime(new Date(result.Timestamp))}</td>
-                        <td data-label="Kelas">${result.KodeKelas}</td>
-                    `;
-                } else {
-                    row.innerHTML = `
-                        <td>${index + 1}</td>
-                        <td>
-                            <a href="#" class="student-name" data-student-name="${result.NamaSiswa}">${result.NamaSiswa}</a>
-                        </td>
-                        <td>${result.Skor}</td>
-                        <td>${formatDateTime(new Date(result.Timestamp))}</td>
-                        <td>${result.KodeKelas}</td>
-                    `;
-                }
-                tbody.appendChild(row);
-            });
-
-            tbody.querySelectorAll('.student-name').forEach(link => {
-                link.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    const studentName = this.dataset.studentName;
-                    showAllScoresModal(studentName, currentSelectedQuizGroupData);
-                });
-            });
         }
 
         function showAllScoresModal(studentName, quizGroupResults) {
             const modalTitle = document.getElementById('modalStudentName');
-            const modalBody = document.getElementById('modalScoresBody');
+            const modalBody = document.getElementById('modal-scores-container');
 
             modalTitle.textContent = studentName;
             modalBody.innerHTML = '';
@@ -1233,24 +1006,108 @@
                 .sort((a, b) => new Date(b.Timestamp) - new Date(a.Timestamp));
 
             if (studentScores.length === 0) {
-                modalBody.innerHTML = '<tr><td colspan="4" class="text-center">Tidak ada data skor untuk siswa ini di quiz ini.</td></tr>';
+                modalBody.innerHTML = '<div class="text-center py-3">Tidak ada data skor untuk siswa ini di quiz ini.</div>';
+                return;
+            }
+
+            if (window.innerWidth <= 768) {
+                // Mobile modal layout
+                const container = document.createElement('div');
+                
+                studentScores.forEach((score, index) => {
+                    const item = document.createElement('div');
+                    item.classList.add('result-item');
+                    item.innerHTML = `
+                        <div class="result-row">
+                            <span class="result-label">No</span>
+                            <span class="result-value">${index + 1}</span>
+                        </div>
+                        <div class="result-row">
+                            <span class="result-label">Skor</span>
+                            <span class="result-value">${score.Skor || '0'}</span>
+                        </div>
+                        <div class="result-row">
+                            <span class="result-label">Waktu</span>
+                            <span class="result-value">${formatDateTime(new Date(score.Timestamp), true)}</span>
+                        </div>
+                        <div class="result-row">
+                            <span class="result-label">Kelas</span>
+                            <span class="result-value">${score.KodeKelas || '-'}</span>
+                        </div>
+                    `;
+                    container.appendChild(item);
+                });
+                
+                modalBody.appendChild(container);
             } else {
+                // Desktop modal layout
+                const table = document.createElement('table');
+                table.classList.add('table', 'table-sm', 'table-striped');
+                
+                const thead = document.createElement('thead');
+                thead.innerHTML = `
+                    <tr>
+                        <th>No</th>
+                        <th>Skor</th>
+                        <th>Waktu</th>
+                        <th>Kelas</th>
+                    </tr>
+                `;
+                
+                const tbody = document.createElement('tbody');
                 studentScores.forEach((score, index) => {
                     const row = document.createElement('tr');
                     row.innerHTML = `
-                        <td data-label="No">${index + 1}</td>
-                        <td data-label="Skor">${score.Skor || '0'}</td>
-                        <td data-label="Timestamp">${formatDateTime(new Date(score.Timestamp))}</td>
-                        <td data-label="Kelas">${score.KodeKelas || '-'}</td>
+                        <td>${index + 1}</td>
+                        <td>${score.Skor || '0'}</td>
+                        <td>${formatDateTime(new Date(score.Timestamp))}</td>
+                        <td>${score.KodeKelas || '-'}</td>
                     `;
-                    modalBody.appendChild(row);
+                    tbody.appendChild(row);
                 });
+                
+                table.appendChild(thead);
+                table.appendChild(tbody);
+                modalBody.appendChild(table);
             }
 
             const allScoresModal = new bootstrap.Modal(document.getElementById('allScoresModal'));
             allScoresModal.show();
         }
 
+        /* ========== UTILITY FUNCTIONS ========== */
+        function formatDateTime(date, shortFormat = false) {
+            if (!date) return '-';
+            
+            if (shortFormat) {
+                return date.toLocaleString('id-ID', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            } else {
+                return date.toLocaleString('id-ID', {
+                    day: 'numeric',
+                    month: 'numeric',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            }
+        }
+
+        function formatDate(date) {
+            if (!date) return '-';
+            return date.toLocaleString('id-ID', {
+                day: 'numeric',
+                month: 'long', 
+                year: 'numeric'
+            });
+        }
+
+        // Check session periodically
         setInterval(checkSession, 5 * 60 * 1000);
     </script>
 </body>
