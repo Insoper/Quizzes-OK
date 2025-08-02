@@ -1,4 +1,4 @@
-const CACHE_NAME = 'kuis-interaktif-v3';
+const CACHE_NAME = 'kuis-interaktif-v4';
 const OFFLINE_URL = 'offline.html';
 const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwKYg9QAx77nM9Pl5iWqHw0_NFkb9l8GWhtXhW2ln-FWp48B1uCMO5IpL49in4SQCPW7Q/exec';
 
@@ -97,3 +97,4 @@ self.addEventListener('fetch', (event) => {
       })
   );
 });
+
